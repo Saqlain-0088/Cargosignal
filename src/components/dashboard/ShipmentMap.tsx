@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Maximize2, X, Filter, ChevronDown, Check, Globe, Layers, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+// const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN; // Removed top-level access
 
 const CITY_COORDINATES: Record<string, [number, number]> = {
   "Shanghai, China": [121.4737, 31.2304],
@@ -30,6 +30,8 @@ interface ShipmentMapProps {
 
 export function ShipmentMap({ shipments = [] }: ShipmentMapProps) {
   const router = useRouter();
+  const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
   const [hoveredShipment, setHoveredShipment] = useState<any>(null);
   const [selectedShipment, setSelectedShipment] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState("all");
