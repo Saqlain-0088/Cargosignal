@@ -10,6 +10,7 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
 model Shipment {
   id          String   @id
   origin      String
@@ -19,6 +20,10 @@ model Shipment {
   carrier     String
   latitude    Float?
   longitude   Float?
+
+  containers     Container[]
+  customsEvents  CustomsEvent[]
+  logisticsCosts LogisticsCost[]
 }
 
 model User {
@@ -29,8 +34,82 @@ model User {
 }
 
 model Document {
-  id          String @id
-  shipmentId  String
-  type        String
-  status      String
+  id         String @id
+  shipmentId String
+  type       String
+  status     String
+}
+
+model Container {
+  id              String @id
+  shipmentId      String
+  containerNumber String
+  size            String
+  type            String
+  currentLocation String
+  temperature     Float?
+  humidity        Float?
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id])
+}
+
+model Alert {
+  id        String   @id
+  type      String
+  severity  String
+  message   String
+  timestamp DateTime
+  relatedId String?
+}
+
+model Port {
+  id        String @id
+  name      String
+  code      String
+  country   String
+  latitude  Float
+  longitude Float
+}
+
+model CustomsEvent {
+  id         String   @id
+  shipmentId String
+  event      String
+  status     String
+  timestamp  DateTime
+  location   String
+  notes      String?
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id])
+}
+
+model LogisticsCost {
+  id         String   @id
+  shipmentId String
+  category   String
+  amount     Float
+  currency   String
+  status     String
+  date       DateTime
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id])
+}
+
+model Role {
+  id          String   @id
+  name        String
+  description String
+  permissions String[]
+}
+
+model CompanyTenant {
+  id              String   @id
+  name            String
+  industry        String
+  status          String
+  activeShipments Int
+  totalSpend      Float
+  userCount       Int
+  joinDate        DateTime
+  logo            String?
 }
