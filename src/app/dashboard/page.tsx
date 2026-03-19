@@ -49,8 +49,12 @@ const monthlyData = [
   { name: "Jun", total: 280, revenue: 85000 },
 ];
 
+import { useRouter } from "next/navigation";
+
 export default function DashboardOverview() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [activeUserFilter, setActiveUserFilter] = useState<number | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -87,6 +91,14 @@ export default function DashboardOverview() {
       default:
         return <Badge variant="default">Pending</Badge>;
     }
+  };
+
+  const handleUpgrade = () => {
+    router.push("/dashboard/billing");
+  };
+
+  const handleCreateShipment = () => {
+    router.push("/dashboard/shipments/new");
   };
 
   if (isLoading) {
@@ -126,7 +138,10 @@ export default function DashboardOverview() {
                  className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-ui text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent transition-all w-64 shadow-premium"
                />
             </div>
-            <Button className="bg-brand-primary hover:bg-slate-800 text-white shadow-premium">
+            <Button 
+              className="bg-brand-primary hover:bg-slate-800 text-white shadow-premium active:scale-95 transition-transform"
+              onClick={handleCreateShipment}
+            >
                Create Shipment
             </Button>
           </div>
@@ -178,7 +193,7 @@ export default function DashboardOverview() {
                 <CardTitle className="text-lg font-bold text-slate-900">Performance Over Time</CardTitle>
                 <p className="text-xs text-slate-500 font-medium uppercase tracking-tighter mt-0.5">Shipment volume vs Revenue</p>
               </div>
-              <select className="text-xs font-bold bg-slate-50 border-none rounded-md px-2 py-1 outline-none">
+              <select className="text-xs font-bold bg-slate-50 border-none rounded-md px-2 py-1 outline-none cursor-pointer">
                 <option>Last 6 Months</option>
                 <option>Last Year</option>
               </select>
@@ -217,7 +232,10 @@ export default function DashboardOverview() {
               </Badge>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+              <div 
+                className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors group/sub"
+                onClick={handleUpgrade}
+              >
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 bg-brand-primary text-white rounded-xl flex items-center justify-center shadow-lg">
                     <ShieldCheck className="h-6 w-6" />
@@ -227,7 +245,7 @@ export default function DashboardOverview() {
                     <p className="text-lg font-black text-slate-900 leading-tight">{company.plan}</p>
                   </div>
                 </div>
-                <ArrowUpRight className="h-5 w-5 text-slate-300 group-hover:text-brand-accent transition-colors cursor-pointer" />
+                <ArrowUpRight className="h-5 w-5 text-slate-300 group-hover/sub:text-brand-accent transition-colors transition-transform group-hover/sub:translate-x-1 group-hover/sub:-translate-y-1" />
               </div>
 
               <div className="space-y-4">
@@ -261,7 +279,10 @@ export default function DashboardOverview() {
               </div>
 
               <div className="pt-2">
-                <Button className="w-full bg-slate-900 border-none text-white font-bold h-11 rounded-xl shadow-premium hover:bg-slate-800 transition-all active:scale-[0.98]">
+                <Button 
+                  className="w-full bg-slate-900 border-none text-white font-bold h-11 rounded-xl shadow-premium hover:bg-slate-800 transition-all active:scale-[0.98] cursor-pointer"
+                  onClick={handleUpgrade}
+                >
                   <Zap className="h-4 w-4 mr-2 fill-current" />
                   Upgrade Capacity
                 </Button>
@@ -283,13 +304,29 @@ export default function DashboardOverview() {
             <div className="flex items-center gap-2">
                <div className="flex -space-x-2 mr-4">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                    <button 
+                      key={i} 
+                      onClick={() => setActiveUserFilter(activeUserFilter === i ? null : i)}
+                      className={cn(
+                        "w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold transition-all hover:scale-110 active:scale-90 hover:z-10",
+                        activeUserFilter === i ? "bg-brand-accent text-white" : "bg-slate-100 text-slate-600"
+                      )}
+                    >
                        U{i}
-                    </div>
+                    </button>
                   ))}
-                  <div className="w-7 h-7 rounded-full border-2 border-white bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm">+</div>
+                  <button 
+                    className="w-7 h-7 rounded-full border-2 border-white bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm hover:scale-110 active:scale-90 transition-all"
+                    onClick={() => console.log("Open create modal")}
+                  >
+                    +
+                  </button>
                </div>
-               <Button variant="secondary" className="h-8 text-xs font-bold px-4 border-slate-200">
+               <Button 
+                variant="secondary" 
+                className="h-8 text-xs font-bold px-4 border-slate-200 hover:bg-slate-50 cursor-pointer"
+                onClick={() => console.log("Open filter panel")}
+               >
                   Detailed Filter
                </Button>
             </div>
@@ -316,17 +353,14 @@ export default function DashboardOverview() {
                         </div>
                       </TableCell>
                       <TableCell className="px-6 py-4">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
                           <div className="flex flex-col">
                              <span className="text-xs font-bold text-slate-700">{shipment.origin.split(',')[0]}</span>
                              <span className="text-[9px] text-slate-400 uppercase font-medium">{shipment.origin.split(',')[1]}</span>
                           </div>
-                          <div className="flex flex-col items-center gap-0.5">
-                             <div className="h-0.5 w-8 bg-slate-200 rounded-full relative overflow-hidden">
-                                <div className="absolute inset-0 bg-brand-accent w-1/2 animate-pulse"></div>
-                             </div>
-                             <ChevronRight className="h-3 w-3 text-brand-accent opacity-50" />
-                          </div>
+                          
+                          <span className="text-slate-300 font-medium text-xs px-2">—</span>
+                          
                           <div className="flex flex-col">
                              <span className="text-xs font-bold text-slate-700">{shipment.destination.split(',')[0]}</span>
                              <span className="text-[9px] text-slate-400 uppercase font-medium">{shipment.destination.split(',')[1]}</span>
@@ -345,7 +379,7 @@ export default function DashboardOverview() {
                         </div>
                       </TableCell>
                       <TableCell className="px-6 py-4 text-center">
-                         <button className="p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors">
+                         <button className="p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors cursor-pointer">
                             <MoreVertical className="h-4 w-4 text-slate-400" />
                          </button>
                       </TableCell>
@@ -361,7 +395,12 @@ export default function DashboardOverview() {
                  </div>
                  <h4 className="text-lg font-bold text-slate-900">No shipments found</h4>
                  <p className="text-sm text-slate-500 max-w-xs mt-1">Start tracking your fleet by initializing your first global shipment unit.</p>
-                 <Button className="mt-6 font-bold px-8">Quick Start Guide</Button>
+                 <Button 
+                  className="mt-6 font-bold px-8 cursor-pointer"
+                  onClick={() => console.log("Open quick start")}
+                 >
+                  Quick Start Guide
+                 </Button>
               </div>
             )}
           </CardContent>
