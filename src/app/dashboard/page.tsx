@@ -311,7 +311,7 @@ export default function DashboardOverview() {
                     <TableRow 
                       key={shipment.id} 
                       className="group hover:bg-slate-50/80 transition-all border-b border-slate-100/50 cursor-pointer"
-                      onClick={() => router.push(`/orders/${shipment.id}`)}
+                      onClick={() => router.push(`/dashboard/shipments/${shipment.id}`)}
                     >
                       <TableCell className="px-6 py-4">
                         <div className="flex flex-col">
