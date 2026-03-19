@@ -9,24 +9,17 @@ import { Button } from "@/components/ui/Button";
 import { 
   Package, 
   Activity, 
-  CheckCircle2, 
   Clock,
   TrendingUp,
-  CreditCard,
   Zap,
   ArrowUpRight,
   ShieldCheck,
-  Calendar,
   Layers,
   Search,
-  ChevronRight,
-  MoreVertical,
-  Globe
+  MoreVertical
 } from "lucide-react";
 import { ShipmentMap } from "@/components/dashboard/ShipmentMap";
 import { 
-  LineChart,
-  Line, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -54,7 +47,6 @@ import { useRouter } from "next/navigation";
 export default function DashboardOverview() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [activeUserFilter, setActiveUserFilter] = useState<number | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -301,35 +293,6 @@ export default function DashboardOverview() {
               <CardTitle className="text-xl font-bold text-slate-900 leading-none">Global Active Shipments</CardTitle>
               <p className="text-xs text-slate-500 font-medium mt-1 uppercase border-l-2 border-brand-accent pl-2 ml-0.5">Monitoring {shipments.length} live units</p>
             </div>
-            <div className="flex items-center gap-2">
-               <div className="flex -space-x-2 mr-4">
-                  {[1, 2, 3].map(i => (
-                    <button 
-                      key={i} 
-                      onClick={() => setActiveUserFilter(activeUserFilter === i ? null : i)}
-                      className={cn(
-                        "w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold transition-all hover:scale-110 active:scale-90 hover:z-10",
-                        activeUserFilter === i ? "bg-brand-accent text-white" : "bg-slate-100 text-slate-600"
-                      )}
-                    >
-                       U{i}
-                    </button>
-                  ))}
-                  <button 
-                    className="w-7 h-7 rounded-full border-2 border-white bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm hover:scale-110 active:scale-90 transition-all"
-                    onClick={() => console.log("Open create modal")}
-                  >
-                    +
-                  </button>
-               </div>
-               <Button 
-                variant="secondary" 
-                className="h-8 text-xs font-bold px-4 border-slate-200 hover:bg-slate-50 cursor-pointer"
-                onClick={() => console.log("Open filter panel")}
-               >
-                  Detailed Filter
-               </Button>
-            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -344,8 +307,12 @@ export default function DashboardOverview() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {shipments.map((shipment, i) => (
-                    <TableRow key={shipment.id} className="group hover:bg-slate-50/50 transition-all border-b border-slate-100/50">
+                  {shipments.map((shipment) => (
+                    <TableRow 
+                      key={shipment.id} 
+                      className="group hover:bg-slate-50/80 transition-all border-b border-slate-100/50 cursor-pointer"
+                      onClick={() => router.push(`/orders/${shipment.id}`)}
+                    >
                       <TableCell className="px-6 py-4">
                         <div className="flex flex-col">
                            <span className="font-black text-brand-primary text-sm tracking-tight">{shipment.id}</span>
