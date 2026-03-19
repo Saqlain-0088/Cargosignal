@@ -18,8 +18,9 @@ import { alerts as initialAlerts, shipments } from "@/mock";
 import { format } from "date-fns";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Alert } from "@/types";
 
-type LocalAlert = typeof initialAlerts[0] & { localStatus: "active" | "acknowledged" | "dismissed" };
+type LocalAlert = Alert & { localStatus: "active" | "acknowledged" | "dismissed" };
 
 export default function AlertsPage() {
   const [filter, setFilter] = useState<"all" | "high" | "medium" | "low">("all");
@@ -27,7 +28,7 @@ export default function AlertsPage() {
   // Set up local state for mocking dismiss/acknowledge actions
   const [alertsList, setAlertsList] = useState<LocalAlert[]>(() => {
     // Generate a few more mock alerts for variety if there are only 2
-    const base = initialAlerts.map(a => ({ ...a, localStatus: "active" as const }));
+    const base: LocalAlert[] = initialAlerts.map(a => ({ ...a, localStatus: "active" }));
     if (base.length < 5) {
       base.push({
         id: "AL-003",

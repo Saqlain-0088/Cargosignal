@@ -3,6 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -108,7 +109,7 @@ export default function SystemAnalyticsPage() {
                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(val) => `$${val/1000}k`} />
                    <Tooltip 
                      contentStyle={{ borderRadius: '12px', border: '1px solid var(--color-surface-border)', boxShadow: 'var(--shadow-premium)', padding: '12px' }}
-                     formatter={(val) => [`$${val.toLocaleString()}`, "GTV"]}
+                     formatter={(val: any) => [`$${val?.toLocaleString()}`, "GTV"]}
                    />
                    <Area type="monotone" dataKey="revenue" stroke="var(--color-status-success)" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
                 </AreaChart>

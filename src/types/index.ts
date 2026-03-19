@@ -24,7 +24,7 @@ export interface Container {
 
 export interface Alert {
   id: string;
-  type: "delay" | "customs" | "temperature" | "route_deviation";
+  type: "delay" | "customs" | "temperature" | "route_deviation" | "routing";
   severity: "low" | "medium" | "high" | "critical";
   message: string;
   timestamp: string;

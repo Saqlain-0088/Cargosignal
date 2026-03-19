@@ -33,6 +33,7 @@ import {
 } from "recharts";
 import { companyTenants } from "@/mock";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 // Platform-wide growth data
 const platformTrafficData = [
