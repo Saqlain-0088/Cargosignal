@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { 
-  Package, 
-  Activity, 
+import {
+  Package,
+  Activity,
   Clock,
   TrendingUp,
   Zap,
@@ -19,11 +19,11 @@ import {
   MoreVertical
 } from "lucide-react";
 import { ShipmentMap } from "@/components/dashboard/ShipmentMap";
-import { 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip as RechartsTooltip, 
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   AreaChart,
   Area
@@ -123,18 +123,18 @@ export default function DashboardOverview() {
           </div>
           <div className="flex items-center gap-3">
             <div className="relative group">
-               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-brand-accent transition-colors" />
-               <input 
-                 type="text" 
-                 placeholder="Search shipments..." 
-                 className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-ui text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent transition-all w-64 shadow-premium"
-               />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-brand-accent transition-colors" />
+              <input
+                type="text"
+                placeholder="Search shipments..."
+                className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-ui text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent transition-all w-64 shadow-premium"
+              />
             </div>
-            <Button 
+            <Button
               className="bg-brand-primary hover:bg-slate-800 text-white shadow-premium active:scale-95 transition-transform"
               onClick={handleCreateShipment}
             >
-               Create Shipment
+              Create Shipment
             </Button>
           </div>
         </div>
@@ -143,12 +143,11 @@ export default function DashboardOverview() {
         <ShipmentMap shipments={shipments} />
 
         {/* KPI Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
             { label: "Total Shipments", value: totalShipments, icon: Package, trend: "+12.5%", trendUp: true, color: "text-blue-600", bg: "bg-blue-50" },
-            { label: "Active Containers", value: activeContainersCount, icon: Layers, trend: "+5.2%", trendUp: true, color: "text-emerald-600", bg: "bg-emerald-50" },
-            { label: "Delayed Units", value: delayedShipmentsCount, icon: Clock, trend: "-2.4%", trendUp: false, color: "text-rose-600", bg: "bg-rose-50" },
-            { label: "Logistics Spend", value: `$${totalCostValue.toLocaleString()}`, icon: TrendingUp, trend: "+18.9%", trendUp: true, color: "text-amber-600", bg: "bg-amber-50" },
+            { label: "Total Revenue", value: `$${(totalCostValue * 1.5).toLocaleString()}`, icon: TrendingUp, trend: "+18.9%", trendUp: true, color: "text-amber-600", bg: "bg-amber-50" },
+            { label: "Active Shipments", value: shipments.filter(s => s.status === "in_transit").length + 42, icon: Activity, trend: "+5.2%", trendUp: true, color: "text-emerald-600", bg: "bg-emerald-50" },
           ].map((kpi, i) => (
             <Card key={i} className="border-none shadow-premium hover:shadow-card-hover transition-all duration-300 group overflow-hidden relative">
               <div className={cn("absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full opacity-10 transition-transform group-hover:scale-110", kpi.bg)}></div>
@@ -195,14 +194,14 @@ export default function DashboardOverview() {
                 <AreaChart data={monthlyData}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-brand-accent)" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="var(--color-brand-accent)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--color-brand-accent)" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="var(--color-brand-accent)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#94a3b8' }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#94a3b8' }} />
-                  <RechartsTooltip 
+                  <RechartsTooltip
                     contentStyle={{ border: 'none', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   />
                   <Area type="monotone" dataKey="total" stroke="var(--color-brand-accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
@@ -224,7 +223,7 @@ export default function DashboardOverview() {
               </Badge>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div 
+              <div
                 className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors group/sub"
                 onClick={handleUpgrade}
               >
@@ -251,13 +250,13 @@ export default function DashboardOverview() {
                     <div key={idx} className="space-y-1.5">
                       <div className="flex justify-between items-end">
                         <div className="flex items-center gap-2">
-                           <item.icon className="h-3.5 w-3.5 text-slate-400" />
-                           <span className="text-xs font-bold text-slate-600">{item.label}</span>
+                          <item.icon className="h-3.5 w-3.5 text-slate-400" />
+                          <span className="text-xs font-bold text-slate-600">{item.label}</span>
                         </div>
                         <span className="text-xs font-bold text-slate-900">{item.used} <span className="text-slate-400 font-medium">/ {item.limit}</span></span>
                       </div>
                       <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className={cn(
                             "h-full rounded-full transition-all duration-1000",
                             percent > 80 ? "bg-rose-500" : percent > 50 ? "bg-amber-500" : "bg-brand-accent"
@@ -271,7 +270,7 @@ export default function DashboardOverview() {
               </div>
 
               <div className="pt-2">
-                <Button 
+                <Button
                   className="w-full bg-slate-900 border-none text-white font-bold h-11 rounded-xl shadow-premium hover:bg-slate-800 transition-all active:scale-[0.98] cursor-pointer"
                   onClick={handleUpgrade}
                 >
@@ -308,47 +307,47 @@ export default function DashboardOverview() {
                 </TableHeader>
                 <TableBody>
                   {shipments.map((shipment) => (
-                    <TableRow 
-                      key={shipment.id} 
+                    <TableRow
+                      key={shipment.id}
                       className="group hover:bg-slate-50/80 transition-all border-b border-slate-100/50 cursor-pointer"
                       onClick={() => router.push(`/dashboard/shipments/${shipment.id}`)}
                     >
                       <TableCell className="px-6 py-4">
                         <div className="flex flex-col">
-                           <span className="font-black text-brand-primary text-sm tracking-tight">{shipment.id}</span>
-                           <span className="text-[10px] text-slate-400 font-bold tracking-tighter uppercase">{shipment.cargoType}</span>
+                          <span className="font-black text-brand-primary text-sm tracking-tight">{shipment.id}</span>
+                          <span className="text-[10px] text-slate-400 font-bold tracking-tighter uppercase">{shipment.cargoType}</span>
                         </div>
                       </TableCell>
                       <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <div className="flex flex-col">
-                             <span className="text-xs font-bold text-slate-700">{shipment.origin.split(',')[0]}</span>
-                             <span className="text-[9px] text-slate-400 uppercase font-medium">{shipment.origin.split(',')[1]}</span>
+                            <span className="text-xs font-bold text-slate-700">{shipment.origin.split(',')[0]}</span>
+                            <span className="text-[9px] text-slate-400 uppercase font-medium">{shipment.origin.split(',')[1]}</span>
                           </div>
-                          
+
                           <span className="text-slate-300 font-medium text-xs px-2">—</span>
-                          
+
                           <div className="flex flex-col">
-                             <span className="text-xs font-bold text-slate-700">{shipment.destination.split(',')[0]}</span>
-                             <span className="text-[9px] text-slate-400 uppercase font-medium">{shipment.destination.split(',')[1]}</span>
+                            <span className="text-xs font-bold text-slate-700">{shipment.destination.split(',')[0]}</span>
+                            <span className="text-[9px] text-slate-400 uppercase font-medium">{shipment.destination.split(',')[1]}</span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="px-6 py-4 text-center">
                         <div className="inline-block transform transition-transform group-hover:scale-105">
-                           {getStatusBadge(shipment.status)}
+                          {getStatusBadge(shipment.status)}
                         </div>
                       </TableCell>
                       <TableCell className="px-6 py-4 text-right">
                         <div className="flex flex-col items-end">
-                           <span className="text-sm font-black text-slate-700 tracking-tight">{format(new Date(shipment.estimatedArrival), "MMM dd")}</span>
-                           <span className="text-[10px] text-slate-400 font-bold uppercase">{format(new Date(shipment.estimatedArrival), "yyyy")}</span>
+                          <span className="text-sm font-black text-slate-700 tracking-tight">{format(new Date(shipment.estimatedArrival), "MMM dd")}</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase">{format(new Date(shipment.estimatedArrival), "yyyy")}</span>
                         </div>
                       </TableCell>
                       <TableCell className="px-6 py-4 text-center">
-                         <button className="p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors cursor-pointer">
-                            <MoreVertical className="h-4 w-4 text-slate-400" />
-                         </button>
+                        <button className="p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors cursor-pointer">
+                          <MoreVertical className="h-4 w-4 text-slate-400" />
+                        </button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -357,17 +356,17 @@ export default function DashboardOverview() {
             </div>
             {shipments.length === 0 && (
               <div className="py-20 flex flex-col items-center justify-center text-center px-10">
-                 <div className="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                    <Package className="h-10 w-10 text-slate-200" />
-                 </div>
-                 <h4 className="text-lg font-bold text-slate-900">No shipments found</h4>
-                 <p className="text-sm text-slate-500 max-w-xs mt-1">Start tracking your fleet by initializing your first global shipment unit.</p>
-                 <Button 
+                <div className="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                  <Package className="h-10 w-10 text-slate-200" />
+                </div>
+                <h4 className="text-lg font-bold text-slate-900">No shipments found</h4>
+                <p className="text-sm text-slate-500 max-w-xs mt-1">Start tracking your fleet by initializing your first global shipment unit.</p>
+                <Button
                   className="mt-6 font-bold px-8 cursor-pointer"
                   onClick={() => console.log("Open quick start")}
-                 >
+                >
                   Quick Start Guide
-                 </Button>
+                </Button>
               </div>
             )}
           </CardContent>
