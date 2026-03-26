@@ -26,20 +26,22 @@ function getPositionAlongRoute(coords: [number, number][], progress: number): [n
 
 export default memo(function MapboxHero() {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markerRef = useRef<any>(null);
   const animFrameRef = useRef<number>(0);
   const progressRef = useRef(0);
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    let mapboxgl: typeof import("mapbox-gl");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mapboxgl: any;
 
     const init = async () => {
       const mb = await import("mapbox-gl");
       mapboxgl = mb.default ?? mb;
-      await import("mapbox-gl/dist/mapbox-gl.css");
 
       (mapboxgl as any).accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
