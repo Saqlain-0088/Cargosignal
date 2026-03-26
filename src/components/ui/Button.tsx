@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "outline";
+  variant?: "primary" | "secondary" | "ghost" | "outline" | "accent" | "dark-outline";
   size?: "default" | "icon" | "sm";
   children?: React.ReactNode;
 }
@@ -10,10 +10,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "default", ...props }, ref) => {
     const variants = {
-      primary: "bg-brand-primary text-white hover:bg-brand-secondary active:opacity-90 rounded-ui",
-      secondary: "bg-white text-brand-primary border border-surface-border hover:bg-background active:bg-slate-100 rounded-ui",
-      ghost: "hover:bg-slate-100 hover:text-slate-900 border-transparent",
-      outline: "border border-slate-200 bg-white hover:bg-slate-50 text-slate-700",
+      primary: "bg-[#0f172a] text-white hover:bg-[#334155] active:opacity-90 rounded-ui",
+      secondary: "bg-white text-[#0f172a] border border-slate-200 hover:bg-slate-50 active:bg-slate-100 rounded-ui",
+      ghost: "hover:bg-white/10 hover:text-white border-transparent",
+      outline: "border border-slate-600 bg-transparent hover:bg-white/10 text-white",
+      accent: "bg-[#ff6d00] text-white hover:bg-[#e56200] active:bg-[#cc5700] rounded-ui transition-transform duration-200 hover:scale-[1.02]",
+      "dark-outline": "border border-white/30 bg-transparent text-white hover:bg-white/10 rounded-ui transition-transform duration-200 hover:scale-[1.02]",
     };
 
     const sizes = {

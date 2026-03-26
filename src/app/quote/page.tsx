@@ -1,158 +1,117 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
+import MarketingLayout from "@/components/layout/MarketingLayout";
 import { Button } from "@/components/ui/Button";
-import { Ship, Plane, Truck, Package, MapPin, Calendar, Weight, ChevronRight, Info } from "lucide-react";
+import { Ship, Plane, Truck, Package, MapPin, Calendar, Weight, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import AnimatedSection from "@/components/marketing/AnimatedSection";
 
 export default function QuotePage() {
-    return (
-        <div className="flex min-h-screen flex-col bg-slate-50">
-            <Navbar />
+  return (
+    <MarketingLayout>
+      <section className="py-16 bg-[#0f0f0f]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            {/* Form */}
+            <div className="lg:col-span-2">
+              <AnimatedSection>
+                <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-8 md:p-10">
+                  <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border border-[#ff6d00]/30 bg-[#ff6d00]/10 text-[#ff6d00]">Get a Quote</div>
+                  <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">Request a <span className="text-[#ff6d00]">Quote</span></h1>
+                  <p className="text-zinc-400 mb-8 text-sm">Fill out the form and our logistics experts will respond within 24 hours.</p>
 
-            <main className="flex-1 pt-32 pb-24">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-
-                        {/* Left Column: Form */}
-                        <div className="lg:col-span-2">
-                            <div className="bg-white rounded-card shadow-premium p-8 md:p-12 border border-slate-100">
-                                <h1 className="text-3xl md:text-4xl font-extrabold text-brand-primary mb-2">Request a <span className="text-brand-accent">Quote</span></h1>
-                                <p className="text-slate-500 mb-10">Fill out the form below and our logistics experts will get back to you with a custom quote within 24 hours.</p>
-
-                                <form className="space-y-10" onSubmit={(e) => e.preventDefault()}>
-                                    {/* Shipment Mode */}
-                                    <div>
-                                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
-                                            <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px]">01</span>
-                                            Shipment Mode
-                                        </h3>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            {[
-                                                { name: "Ocean", icon: Ship },
-                                                { name: "Air", icon: Plane },
-                                                { name: "Road", icon: Truck },
-                                                { name: "Express", icon: Package },
-                                            ].map((mode) => (
-                                                <label key={mode.name} className="relative group cursor-pointer">
-                                                    <input type="radio" name="mode" className="peer hidden" />
-                                                    <div className="flex flex-col items-center p-4 rounded-xl border-2 border-slate-50 bg-slate-50 peer-checked:border-brand-accent peer-checked:bg-brand-accent/5 peer-checked:text-brand-accent transition-all group-hover:border-slate-200">
-                                                        <mode.icon className="h-6 w-6 mb-2" />
-                                                        <span className="text-sm font-bold">{mode.name}</span>
-                                                    </div>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Route Details */}
-                                    <div>
-                                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
-                                            <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px]">02</span>
-                                            Route Details
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-semibold text-slate-600">Origin City/Port</label>
-                                                <div className="relative">
-                                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                    <input type="text" placeholder="e.g. Shanghai, China" className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-ui outline-none focus:ring-2 focus:ring-brand-accent/10" />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-semibold text-slate-600">Destination City/Port</label>
-                                                <div className="relative">
-                                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                    <input type="text" placeholder="e.g. Hamburg, Germany" className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-ui outline-none focus:ring-2 focus:ring-brand-accent/10" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Cargo Details */}
-                                    <div>
-                                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
-                                            <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px]">03</span>
-                                            Cargo Details
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-semibold text-slate-600">Weight (kg)</label>
-                                                <div className="relative">
-                                                    <Weight className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                    <input type="number" placeholder="5000" className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-ui outline-none focus:ring-2 focus:ring-brand-accent/10" />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-semibold text-slate-600">Dimensions (cm)</label>
-                                                <input type="text" placeholder="LxWxH" className="w-full h-12 px-4 bg-slate-50 border-none rounded-ui outline-none focus:ring-2 focus:ring-brand-accent/10" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-semibold text-slate-600">Ship Date</label>
-                                                <div className="relative">
-                                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                    <input type="date" className="w-full h-12 pl-12 pr-4 bg-slate-50 border-none rounded-ui outline-none focus:ring-2 focus:ring-brand-accent/10" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <Button className="w-full h-14 text-lg shadow-xl shadow-brand-accent/20">
-                                        Submit Quote Request <ChevronRight className="ml-2 h-5 w-5" />
-                                    </Button>
-                                </form>
+                  <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+                    {/* Mode */}
+                    <div>
+                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">01 — Shipment Mode</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {[{ name: "Ocean", icon: Ship }, { name: "Air", icon: Plane }, { name: "Road", icon: Truck }, { name: "Express", icon: Package }].map((mode) => (
+                          <label key={mode.name} className="relative cursor-pointer group">
+                            <input type="radio" name="mode" className="peer hidden" />
+                            <div className="flex flex-col items-center p-4 rounded-xl border border-white/10 bg-[#0f0f0f] peer-checked:border-[#ff6d00] peer-checked:bg-[#ff6d00]/10 peer-checked:text-[#ff6d00] text-zinc-400 transition-all group-hover:border-white/30">
+                              <mode.icon className="h-5 w-5 mb-2" />
+                              <span className="text-xs font-bold">{mode.name}</span>
                             </div>
-                        </div>
-
-                        {/* Right Column: Info & Help */}
-                        <div className="space-y-8">
-                            <div className="bg-brand-primary rounded-card p-8 text-white relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full pointer-events-none"></div>
-                                <h4 className="text-xl font-bold mb-4 relative z-10">Why CargoSignal?</h4>
-                                <ul className="space-y-4 relative z-10">
-                                    {[
-                                        "Instant pricing on common routes",
-                                        "Best-in-class logistics carriers",
-                                        "24/7 dedicated support team",
-                                        "End-to-end visibility included"
-                                    ].map((item, i) => (
-                                        <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
-                                            <div className="mt-1 bg-brand-accent p-0.5 rounded-full">
-                                                <ChevronRight className="h-3 w-3 text-white" />
-                                            </div>
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            <div className="bg-white rounded-card p-8 border border-slate-100 shadow-sm">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="bg-slate-50 p-3 rounded-lg text-brand-accent">
-                                        <Info className="h-6 w-6" />
-                                    </div>
-                                    <div className="font-bold text-brand-primary">Need Help?</div>
-                                </div>
-                                <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                                    Have questions about labels, documentation, or international regulations? Our support team is here to assist you.
-                                </p>
-                                <Link href="/contact" className="text-sm font-bold text-brand-accent hover:underline">
-                                    Contact Specialist →
-                                </Link>
-                            </div>
-
-                            <div className="aspect-[4/5] bg-slate-100 rounded-card flex items-center justify-center text-slate-400 text-xs text-center p-10 font-mono italic">
-                                [ Image Placeholder: Customer Support Specialist ]
-                            </div>
-                        </div>
-
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                </div>
-            </main>
 
-            <Footer />
+                    {/* Route */}
+                    <div>
+                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">02 — Route Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {["Origin City/Port", "Destination City/Port"].map((label) => (
+                          <div key={label}>
+                            <label className="block text-xs font-medium text-zinc-400 mb-1.5">{label}</label>
+                            <div className="relative">
+                              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
+                              <input type="text" placeholder="e.g. Shanghai, China" className="w-full h-11 pl-10 pr-4 rounded-lg text-sm text-white placeholder:text-zinc-600 bg-[#0f0f0f] border border-white/10 outline-none focus:ring-1 focus:ring-[#ff6d00]" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Cargo */}
+                    <div>
+                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">03 — Cargo Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-zinc-400 mb-1.5">Weight (kg)</label>
+                          <div className="relative">
+                            <Weight className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
+                            <input type="number" placeholder="5000" className="w-full h-11 pl-10 pr-4 rounded-lg text-sm text-white placeholder:text-zinc-600 bg-[#0f0f0f] border border-white/10 outline-none focus:ring-1 focus:ring-[#ff6d00]" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-zinc-400 mb-1.5">Dimensions (cm)</label>
+                          <input type="text" placeholder="LxWxH" className="w-full h-11 px-4 rounded-lg text-sm text-white placeholder:text-zinc-600 bg-[#0f0f0f] border border-white/10 outline-none focus:ring-1 focus:ring-[#ff6d00]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-zinc-400 mb-1.5">Ship Date</label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
+                            <input type="date" className="w-full h-11 pl-10 pr-4 rounded-lg text-sm text-white bg-[#0f0f0f] border border-white/10 outline-none focus:ring-1 focus:ring-[#ff6d00]" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button variant="accent" className="w-full gap-2 h-12 text-base">
+                      Submit Quote Request <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </form>
+                </div>
+              </AnimatedSection>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <AnimatedSection delay={0.15}>
+                <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-6">
+                  <h4 className="text-lg font-bold text-white mb-4">Why CargoSignal?</h4>
+                  <ul className="space-y-3">
+                    {["Instant pricing on common routes", "Best-in-class logistics carriers", "24/7 dedicated support team", "End-to-end visibility included"].map((item) => (
+                      <li key={item} className="flex items-start gap-3 text-sm text-zinc-400">
+                        <div className="mt-0.5 w-5 h-5 rounded-full bg-[#ff6d00]/10 flex items-center justify-center shrink-0">
+                          <ChevronRight className="h-3 w-3 text-[#ff6d00]" />
+                        </div>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-6 mt-6">
+                  <h4 className="font-bold text-white mb-3">Need Help?</h4>
+                  <p className="text-sm text-zinc-400 mb-4 leading-relaxed">Have questions about documentation or regulations? Our support team is here.</p>
+                  <Link href="/contact" className="text-sm font-bold text-[#ff6d00] hover:underline">Contact Specialist →</Link>
+                </div>
+              </AnimatedSection>
+            </div>
+          </div>
         </div>
-    );
+      </section>
+    </MarketingLayout>
+  );
 }

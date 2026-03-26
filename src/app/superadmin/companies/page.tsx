@@ -1,188 +1,86 @@
 "use client";
-
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { 
-  Building2, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  ExternalLink, 
-  Ban, 
-  CheckCircle, 
-  ArrowUpDown,
-  Mail,
-  Calendar,
-  Layers,
-  Plus,
-  TrendingUp,
-  Users
-} from "lucide-react";
+import { useState } from "react";
+import { Search, Ban, CheckCircle, Eye, Building2 } from "lucide-react";
 import { companyTenants } from "@/mock";
-import { cn } from "@/lib/utils";
+import SAModal from "@/components/superadmin/SAModal";
+import { Button } from "@/components/ui/Button";
+import StatCard from "@/components/superadmin/StatCard";
 
-export default function CompaniesManagementPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [items, setItems] = useState(companyTenants);
+const plans = ["Starter", "Professional", "Business", "Enterprise"];
 
-  const handleToggleStatus = (id: string) => {
-    setItems(prev => prev.map(company => {
-      if (company.id === id) {
-        return {
-          ...company,
-          status: company.status === "suspended" ? "active" : "suspended"
-        };
-      }
-      return company;
-    }));
-  };
+export default function OrganizationsPage() {
+  const [search, setSearch] = useState("");
+  const [items, setItems] = useState(companyTenants.map(c => ({ ...c, plan: "Professional" })));
+  const [viewOrg, setViewOrg] = useState<typeof items[0] | null>(null);
+  const [assignPlan, setAssignPlan] = useState<typeof items[0] | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState("");
 
-  const filteredCompanies = items.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const toggle = (id: string) => setItems(prev => prev.map(c => c.id === id ? { ...c, status: c.status === "active" ? "suspended" : "active" } : c));
+  const savePlan = () => { if (assignOrg && selectedPlan) { setItems(prev => prev.map(c => c.id === assignOrg.id ? { ...c, plan: selectedPlan } : c)); setAssignPlan(null); } };
+  const assignOrg = assignPlan;
+
+  const filtered = items.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.industry.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="flex flex-col gap-8 p-base">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-brand-primary tracking-tight flex items-center gap-3">
-            <Building2 className="h-8 w-8 text-brand-accent" />
-            Company Tenants
-          </h1>
-          <p className="text-slate-500 mt-1">Manage and monitor all organizations using the platform.</p>
+    <div className="space-y-6">
+      <div><h1 className="text-2xl font-extrabold text-white">Organizations</h1><p className="text-zinc-500 text-sm mt-1">Manage all tenant organizations on the platform.</p></div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard title="Total Orgs" value={items.length} icon={Building2} color="#10b981" />
+        <StatCard title="Active" value={items.filter(c => c.status === "active").length} icon={CheckCircle} trend="↑" trendUp color="#3b82f6" />
+        <StatCard title="Suspended" value={items.filter(c => c.status === "suspended").length} icon={Ban} color="#ef4444" />
+      </div>
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search organizations..." className="w-full h-10 pl-9 pr-4 rounded-lg text-sm text-white placeholder:text-zinc-600 bg-[#1a1a1a] border border-white/10 outline-none focus:ring-1 focus:ring-[#ff6d00]" />
+      </div>
+      <div className="rounded-xl bg-[#1a1a1a] border border-white/10 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="border-b border-white/10">{["Organization","Plan","Users","Status","Actions"].map(h => <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">{h}</th>)}</tr></thead>
+            <tbody>
+              {filtered.map(org => (
+                <tr key={org.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <td className="px-5 py-3"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-[#ff6d00]/10 flex items-center justify-center text-xs font-bold text-[#ff6d00]">{org.name[0]}</div><div><div className="font-medium text-white">{org.name}</div><div className="text-xs text-zinc-500">{org.industry}</div></div></div></td>
+                  <td className="px-5 py-3"><span className="text-xs px-2 py-0.5 rounded-full bg-[#ff6d00]/10 text-[#ff6d00] font-medium">{org.plan}</span></td>
+                  <td className="px-5 py-3 text-zinc-300">{org.userCount}</td>
+                  <td className="px-5 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${org.status === "active" ? "bg-green-500/10 text-green-400" : org.status === "trial" ? "bg-blue-500/10 text-blue-400" : "bg-red-500/10 text-red-400"}`}>{org.status}</span></td>
+                  <td className="px-5 py-3"><div className="flex items-center gap-2">
+                    <button onClick={() => setViewOrg(org)} className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all"><Eye className="h-4 w-4" /></button>
+                    <button onClick={() => { setAssignPlan(org); setSelectedPlan(org.plan); }} className="p-1.5 rounded-lg text-zinc-400 hover:text-[#ff6d00] hover:bg-[#ff6d00]/10 transition-all text-xs font-medium px-2">Plan</button>
+                    <button onClick={() => toggle(org.id)} className={`p-1.5 rounded-lg transition-all ${org.status === "active" ? "text-zinc-400 hover:text-red-400 hover:bg-red-500/10" : "text-zinc-400 hover:text-green-400 hover:bg-green-500/10"}`}>{org.status === "active" ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}</button>
+                  </div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <Button className="gap-2 bg-brand-accent hover:bg-brand-accent/90 text-white shadow-premium font-bold">
-          <Plus className="h-4 w-4" />
-          Provision New Tenant
-        </Button>
       </div>
 
-      {/* Control Bar */}
-      <Card className="border-surface-border shadow-premium overflow-hidden">
-        <CardContent className="p-4 bg-slate-50/30">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input 
-                placeholder="Search by company name, ID, or industry..." 
-                className="pl-10 h-10 border-surface-border focus:ring-brand-accent/20 focus:border-brand-accent"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+      {/* View Modal */}
+      <SAModal open={!!viewOrg} onClose={() => setViewOrg(null)} title="Organization Details">
+        {viewOrg && <div className="space-y-3 text-sm">
+          {[["Name", viewOrg.name], ["Industry", viewOrg.industry], ["Status", viewOrg.status], ["Users", viewOrg.userCount], ["Active Shipments", viewOrg.activeShipments], ["Total Spend", `$${viewOrg.totalSpend.toLocaleString()}`], ["Plan", viewOrg.plan]].map(([k, v]) => (
+            <div key={String(k)} className="flex justify-between py-2 border-b border-white/5">
+              <span className="text-zinc-500">{k}</span>
+              <span className="text-white font-medium">{String(v)}</span>
             </div>
-            <Button variant="secondary" className="h-10 gap-2 font-bold px-6 border-surface-border">
-              <Filter className="h-4 w-4" />
-              Advanced Filters
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>}
+      </SAModal>
 
-      {/* Companies Table */}
-      <Card className="border-surface-border shadow-premium overflow-hidden">
-        <CardContent className="p-0">
-           <Table>
-             <TableHeader className="bg-slate-50/80 border-b border-surface-border">
-               <TableRow className="hover:bg-transparent">
-                 <TableHead className="w-[300px] font-bold text-slate-600 uppercase tracking-wider text-[11px]">Organization</TableHead>
-                 <TableHead className="font-bold text-slate-600 uppercase tracking-wider text-[11px]">Usage Metrics</TableHead>
-                 <TableHead className="font-bold text-slate-600 uppercase tracking-wider text-[11px]">Lifecycle GTV</TableHead>
-                 <TableHead className="font-bold text-slate-600 uppercase tracking-wider text-[11px]">Status</TableHead>
-                 <TableHead className="text-right font-bold text-slate-600 uppercase tracking-wider text-[11px]">Actions</TableHead>
-               </TableRow>
-             </TableHeader>
-             <TableBody>
-               {filteredCompanies.map((company) => (
-                 <TableRow key={company.id} className="group hover:bg-slate-50 transition-colors">
-                   <TableCell className="py-4">
-                     <div className="flex items-center gap-4">
-                       <div className="h-12 w-12 bg-white border border-surface-border rounded-ui flex items-center justify-center font-bold text-xl text-brand-primary shadow-sm group-hover:bg-brand-primary group-hover:text-white transition-all">
-                         {company.name.charAt(0)}
-                       </div>
-                       <div className="flex flex-col">
-                         <span className="font-bold text-brand-primary tracking-tight">{company.name}</span>
-                         <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
-                           <Layers className="h-3 w-3" />
-                           {company.industry} • {company.id}
-                         </span>
-                       </div>
-                     </div>
-                   </TableCell>
-                   <TableCell>
-                      <div className="flex flex-col gap-2">
-                         <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
-                            <span className="flex items-center gap-1">
-                              <TrendingUp className="h-3 w-3 text-status-success" />
-                              {company.activeShipments} Shipments
-                            </span>
-                            <span className="flex items-center gap-1 text-brand-accent">
-                              <Users className="h-3 w-3" />
-                              {company.userCount} Users
-                            </span>
-                         </div>
-                         <div className="w-32 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                            <div 
-                              className="bg-brand-accent h-full" 
-                              style={{ width: `${Math.min((company.activeShipments / 150) * 100, 100)}%` }}
-                            ></div>
-                         </div>
-                      </div>
-                   </TableCell>
-                   <TableCell>
-                      <div className="flex flex-col">
-                         <span className="font-bold text-brand-primary">${company.totalSpend.toLocaleString()}</span>
-                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Total spend</span>
-                      </div>
-                   </TableCell>
-                   <TableCell>
-                      <Badge variant={company.status === "active" ? "success" : company.status === "trial" ? "info" : "error"} className="px-3 py-1 font-bold uppercase text-[10px] min-w-[80px] justify-center">
-                        {company.status}
-                      </Badge>
-                   </TableCell>
-                   <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2 px-2">
-                        <Button 
-                          variant="secondary" 
-                          className={cn(
-                            "h-9 w-9 p-0 border-surface-border",
-                            company.status === "suspended" ? "text-status-success hover:bg-status-success/10" : "text-status-error hover:bg-status-error/10"
-                          )}
-                          title={company.status === "suspended" ? "Activate Tenant" : "Suspend Tenant"}
-                          onClick={() => handleToggleStatus(company.id)}
-                        >
-                          {company.status === "suspended" ? <CheckCircle className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
-                        </Button>
-                        <Button variant="secondary" className="h-9 w-9 p-0 border-surface-border text-slate-400 hover:text-brand-accent">
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                        <Button variant="secondary" className="h-9 w-9 p-0 border-surface-border text-slate-400">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
-                   </TableCell>
-                 </TableRow>
-               ))}
-               {filteredCompanies.length === 0 && (
-                 <TableRow className="hover:bg-transparent">
-                   <TableCell colSpan={5} className="py-24 text-center">
-                      <div className="flex flex-col items-center justify-center gap-4 text-slate-400">
-                         <Search className="h-12 w-12 opacity-20" />
-                         <p className="font-bold">No companies matching your search filters.</p>
-                         <Button variant="secondary" onClick={() => setSearchTerm("")}>Clear All Filters</Button>
-                      </div>
-                   </TableCell>
-                 </TableRow>
-               )}
-             </TableBody>
-           </Table>
-        </CardContent>
-      </Card>
+      {/* Assign Plan Modal */}
+      <SAModal open={!!assignPlan} onClose={() => setAssignPlan(null)} title="Assign Plan" width="max-w-sm">
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-400">Select a plan for <span className="text-white font-medium">{assignOrg?.name}</span></p>
+          <select value={selectedPlan} onChange={e => setSelectedPlan(e.target.value)} className="w-full h-10 px-3 rounded-lg text-sm text-white bg-[#0f0f0f] border border-white/10 outline-none focus:ring-1 focus:ring-[#ff6d00]">
+            {plans.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
+            <Button variant="dark-outline" onClick={() => setAssignPlan(null)}>Cancel</Button>
+            <Button variant="accent" onClick={savePlan}>Assign Plan</Button>
+          </div>
+        </div>
+      </SAModal>
     </div>
   );
 }

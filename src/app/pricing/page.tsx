@@ -1,185 +1,88 @@
 "use client";
-
-import React, { useState } from "react";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
+import { useState } from "react";
+import MarketingLayout from "@/components/layout/MarketingLayout";
 import { Button } from "@/components/ui/Button";
-import { Check, HelpCircle, Zap, Shield, Building2 } from "lucide-react";
+import { Check, Zap, Shield, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AnimatedSection from "@/components/marketing/AnimatedSection";
 
 const plans = [
-    {
-        name: "Basic",
-        description: "Ideal for small businesses starting with international trade.",
-        monthlyPrice: 99,
-        yearlyPrice: 79,
-        features: [
-            "Up to 10 Shipments / Month",
-            "Standard Tracking Access",
-            "Basic Analytics Dashboard",
-            "Email Support (24h response)",
-            "Standard Customs Documentation",
-            "1 User Account",
-        ],
-        cta: "Start Free Trial",
-        highlight: false,
-        icon: Zap,
-    },
-    {
-        name: "Professional",
-        description: "For growing companies needing advanced visibility and speed.",
-        monthlyPrice: 299,
-        yearlyPrice: 239,
-        features: [
-            "Up to 100 Shipments / Month",
-            "Real-time GPS Tracking",
-            "Predictive ETA Analytics",
-            "Priority Support (4h response)",
-            "Automated Document Workflows",
-            "5 User Accounts",
-            "API Integration Access",
-        ],
-        cta: "Get Started Now",
-        highlight: true,
-        icon: Shield,
-    },
-    {
-        name: "Enterprise",
-        description: "Custom solutions for global enterprises with complex needs.",
-        monthlyPrice: "Custom",
-        yearlyPrice: "Custom",
-        features: [
-            "Unlimited Shipments",
-            "Advanced Global Visibility",
-            "Custom AI Predictions",
-            "Dedicated Account Manager",
-            "Custom Integration Support",
-            "Unlimited User Accounts",
-            "SLA Guarantees",
-            "White-label Reports",
-        ],
-        cta: "Talk to Sales",
-        highlight: false,
-        icon: Building2,
-    },
+  { name: "Basic", icon: Zap, desc: "Ideal for small businesses.", monthly: 99, yearly: 79, highlight: false, cta: "Start Free Trial",
+    features: ["Up to 10 Shipments/Month", "Standard Tracking", "Basic Analytics", "Email Support", "1 User Account"] },
+  { name: "Professional", icon: Shield, desc: "For growing companies.", monthly: 299, yearly: 239, highlight: true, cta: "Get Started Now",
+    features: ["Up to 100 Shipments/Month", "Real-time GPS Tracking", "Predictive ETA", "Priority Support", "5 User Accounts", "API Access"] },
+  { name: "Enterprise", icon: Building2, desc: "Custom enterprise solutions.", monthly: null, yearly: null, highlight: false, cta: "Talk to Sales",
+    features: ["Unlimited Shipments", "Advanced Visibility", "Custom AI", "Dedicated Manager", "Unlimited Users", "SLA Guarantees"] },
 ];
 
 export default function PricingPage() {
-    const [isYearly, setIsYearly] = useState(false);
-
-    return (
-        <div className="flex min-h-screen flex-col bg-slate-50">
-            <Navbar />
-
-            <main className="flex-1 pt-32 pb-24">
-                <div className="max-w-7xl mx-auto px-6">
-                    {/* Header */}
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h1 className="text-4xl md:text-6xl font-extrabold text-brand-primary mb-6">
-                            Simple, Transparent <span className="text-brand-accent">Pricing</span>
-                        </h1>
-                        <p className="text-lg text-slate-500 mb-10">
-                            Choose the plan that best fits your logistics operations. We scale with you as your business grows.
-                        </p>
-
-                        {/* Toggle */}
-                        <div className="flex items-center justify-center gap-4">
-                            <span className={cn("text-sm font-bold transition-colors", !isYearly ? "text-brand-primary" : "text-slate-400")}>Monthly</span>
-                            <button
-                                onClick={() => setIsYearly(!isYearly)}
-                                className="w-14 h-7 bg-slate-200 rounded-full p-1 relative transition-colors focus:outline-none"
-                            >
-                                <div className={cn(
-                                    "w-5 h-5 bg-brand-accent rounded-full transition-transform duration-300",
-                                    isYearly ? "translate-x-7" : "translate-x-0"
-                                )} />
-                            </button>
-                            <div className="flex items-center gap-2">
-                                <span className={cn("text-sm font-bold transition-colors", isYearly ? "text-brand-primary" : "text-slate-400")}>Yearly</span>
-                                <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Save 20%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Pricing Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
-                        {plans.map((plan) => (
-                            <div
-                                key={plan.name}
-                                className={cn(
-                                    "relative bg-white rounded-card p-8 transition-all duration-300 border-2",
-                                    plan.highlight
-                                        ? "border-brand-accent shadow-2xl scale-[1.02] z-10"
-                                        : "border-slate-100 shadow-sm hover:shadow-xl hover:border-slate-200"
-                                )}
-                            >
-                                {plan.highlight && (
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-accent text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider">
-                                        Most Popular
-                                    </div>
-                                )}
-
-                                <div className="mb-8">
-                                    <div className={cn(
-                                        "w-12 h-12 rounded-xl flex items-center justify-center mb-6",
-                                        plan.highlight ? "bg-brand-accent text-white" : "bg-slate-50 text-brand-primary"
-                                    )}>
-                                        <plan.icon className="h-6 w-6" />
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-brand-primary mb-2">{plan.name}</h3>
-                                    <p className="text-sm text-slate-500 leading-relaxed mb-6">{plan.description}</p>
-
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-4xl font-black text-brand-primary">
-                                            {typeof (isYearly ? plan.yearlyPrice : plan.monthlyPrice) === 'number' ? '$' : ''}
-                                            {isYearly ? plan.yearlyPrice : plan.monthlyPrice}
-                                        </span>
-                                        {typeof plan.monthlyPrice === 'number' && (
-                                            <span className="text-slate-400 font-medium">/month</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4 mb-10">
-                                    {plan.features.map((feature, i) => (
-                                        <div key={i} className="flex items-start gap-3">
-                                            <div className="mt-1 bg-brand-accent/10 p-0.5 rounded-full">
-                                                <Check className="h-3.5 w-3.5 text-brand-accent" />
-                                            </div>
-                                            <span className="text-sm text-slate-600 font-medium">{feature}</span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <Button
-                                    className={cn(
-                                        "w-full h-12 shadow-lg",
-                                        plan.highlight ? "shadow-brand-accent/20" : "bg-slate-900 shadow-slate-900/10"
-                                    )}
-                                    variant={plan.highlight ? "primary" : "primary"}
-                                >
-                                    {plan.cta}
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* FAQ Preview or Comparison Table */}
-                    <div className="bg-white rounded-card shadow-sm border border-slate-100 p-12 text-center overflow-hidden relative">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-bl-full -mr-32 -mt-32 -z-0"></div>
-                        <h3 className="text-2xl font-bold text-brand-primary mb-6 relative z-10">Need a more customized plan?</h3>
-                        <p className="text-slate-500 mb-8 max-w-xl mx-auto relative z-10">
-                            We understand that every business has unique requirements. Contact our team to design a bespoke logistics visibility solution for your specific needs.
-                        </p>
-                        <div className="flex justify-center gap-4 relative z-10">
-                            <Button variant="outline" className="border-slate-200">View All Features</Button>
-                            <Button>Contact Sales</Button>
-                        </div>
-                    </div>
+  const [yearly, setYearly] = useState(false);
+  return (
+    <MarketingLayout>
+      <section className="py-20 bg-[#0f0f0f]">
+        <div className="max-w-7xl mx-auto px-6">
+          <AnimatedSection>
+            <div className="text-center max-w-2xl mx-auto mb-14">
+              <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border border-[#ff6d00]/30 bg-[#ff6d00]/10 text-[#ff6d00]">Pricing</div>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Simple, Transparent <span className="text-[#ff6d00]">Pricing</span></h1>
+              <p className="text-zinc-400 mb-8">Choose the plan that fits your logistics operations.</p>
+              <div className="flex items-center justify-center gap-4">
+                <span className={cn("text-sm font-bold", !yearly ? "text-white" : "text-zinc-500")}>Monthly</span>
+                <button onClick={() => setYearly(!yearly)} className="w-12 h-6 bg-white/10 rounded-full p-1 relative border border-white/20">
+                  <div className={cn("w-4 h-4 bg-[#ff6d00] rounded-full transition-transform duration-300", yearly ? "translate-x-6" : "translate-x-0")} />
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className={cn("text-sm font-bold", yearly ? "text-white" : "text-zinc-500")}>Yearly</span>
+                  <span className="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">Save 20%</span>
                 </div>
-            </main>
-
-            <Footer />
+              </div>
+            </div>
+          </AnimatedSection>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            {plans.map((plan, i) => (
+              <AnimatedSection key={plan.name} delay={i * 0.1}>
+                <div className={cn("relative rounded-xl p-8 border h-full flex flex-col transition-all duration-200",
+                  plan.highlight ? "border-[#ff6d00] bg-[#1a1a1a] shadow-[0_0_40px_rgba(255,109,0,0.15)]" : "border-white/10 bg-[#1a1a1a] hover:border-[#ff6d00]/40")}>
+                  {plan.highlight && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#ff6d00] text-white text-xs font-bold px-4 py-1 rounded-full uppercase">Most Popular</div>}
+                  <div className="mb-6">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 bg-[#ff6d00]/10">
+                      <plan.icon className="h-5 w-5 text-[#ff6d00]" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-1">{plan.name}</h3>
+                    <p className="text-sm text-zinc-400 mb-4">{plan.desc}</p>
+                    <div className="flex items-baseline gap-1">
+                      {plan.monthly
+                        ? <><span className="text-4xl font-black text-white">${yearly ? plan.yearly : plan.monthly}</span><span className="text-zinc-500 text-sm">/mo</span></>
+                        : <span className="text-3xl font-black text-white">Custom</span>}
+                    </div>
+                  </div>
+                  <div className="space-y-3 mb-8 flex-1">
+                    {plan.features.map((f) => (
+                      <div key={f} className="flex items-center gap-3">
+                        <div className="w-5 h-5 rounded-full bg-[#ff6d00]/10 flex items-center justify-center shrink-0">
+                          <Check className="h-3 w-3 text-[#ff6d00]" />
+                        </div>
+                        <span className="text-sm text-zinc-300">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Button variant={plan.highlight ? "accent" : "dark-outline"} className="w-full">{plan.cta}</Button>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+          <AnimatedSection>
+            <div className="rounded-xl p-10 bg-[#1a1a1a] border border-white/10 text-center">
+              <h3 className="text-2xl font-bold text-white mb-3">Need a custom plan?</h3>
+              <p className="text-zinc-400 mb-6 max-w-lg mx-auto">Contact our team to design a bespoke solution.</p>
+              <div className="flex justify-center gap-4">
+                <Button variant="dark-outline">View All Features</Button>
+                <Button variant="accent">Contact Sales</Button>
+              </div>
+            </div>
+          </AnimatedSection>
         </div>
-    );
+      </section>
+    </MarketingLayout>
+  );
 }
