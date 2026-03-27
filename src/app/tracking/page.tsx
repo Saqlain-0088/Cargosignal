@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MarketingLayout from "@/components/layout/MarketingLayout";
 import { Button } from "@/components/ui/Button";
-import { Search, Ship, MapPin, CheckCircle2, Package, Globe, Clock, Info } from "lucide-react";
+import { Search, Ship, MapPin, CheckCircle2, Package, Globe, Clock, Info, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AnimatedSection from "@/components/marketing/AnimatedSection";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
+const STORAGE_KEY = "cs_pending_tracking_id";
 
 const timeline = [
   { status: "In Transit", location: "Pacific Ocean", date: "Mar 20, 2026", time: "09:45 AM", active: true, done: false },
@@ -17,6 +21,34 @@ const timeline = [
 export default function TrackingPage() {
   const [trackingId, setTrackingId] = useState("");
   const [showStatus, setShowStatus] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  // On mount: if user just came back after auth, restore pending tracking ID and auto-track
+  useEffect(() => {
+    if (isLoading) return;
+    const pending = localStorage.getItem(STORAGE_KEY);
+    if (pending && isAuthenticated) {
+      setTrackingId(pending);
+      setShowStatus(true);
+      localStorage.removeItem(STORAGE_KEY); // clear after use
+    }
+  }, [isAuthenticated, isLoading]);
+
+  const handleTrack = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trackingId.trim()) return;
+
+    if (!isAuthenticated) {
+      // Save container number and redirect to register
+      localStorage.setItem(STORAGE_KEY, trackingId.trim());
+      router.push("/register?redirect=tracking");
+      return;
+    }
+
+    // Authenticated — show results
+    setShowStatus(true);
+  };
 
   return (
     <MarketingLayout>
@@ -27,7 +59,7 @@ export default function TrackingPage() {
               <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border border-[#ff6d00]/30 bg-[#ff6d00]/10 text-[#ff6d00]">Live Tracking</div>
               <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Track Your <span className="text-[#ff6d00]">Shipment</span></h1>
               <p className="text-zinc-400 mb-8">Enter your Tracking ID, Bill of Lading, or Container Number.</p>
-              <form onSubmit={(e) => { e.preventDefault(); if (trackingId.trim()) setShowStatus(true); }} className="relative max-w-2xl mx-auto">
+              <form onSubmit={handleTrack} className="relative max-w-2xl mx-auto">
                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                   <Search className="h-5 w-5 text-zinc-500" />
                 </div>
@@ -40,6 +72,12 @@ export default function TrackingPage() {
                   <Button type="submit" variant="accent" className="h-full px-6 rounded-lg">Track Now</Button>
                 </div>
               </form>
+              {!isAuthenticated && !isLoading && (
+                <p className="text-xs text-zinc-600 mt-3 flex items-center justify-center gap-1.5">
+                  <Lock className="h-3 w-3" />
+                  Sign in or register to view tracking results
+                </p>
+              )}
             </div>
           </AnimatedSection>
 

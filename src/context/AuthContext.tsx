@@ -42,7 +42,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const mockUser: User = { id: "u-123", email, name: "Demo User", companyId: "c-456" };
     localStorage.setItem("cargosignal_user", JSON.stringify(mockUser));
     setUser(mockUser);
-    router.push("/dashboard");
+    // Check for pending tracking redirect
+    const pendingTracking = localStorage.getItem("cs_pending_tracking_id");
+    if (pendingTracking) {
+      router.push("/tracking");
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   const register = async (name: string, email: string) => {
@@ -50,7 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const newUser: User = { id: `u-${Date.now()}`, email, name };
     localStorage.setItem("cargosignal_user", JSON.stringify(newUser));
     setUser(newUser);
-    router.push("/onboarding");
+    // Check for pending tracking redirect
+    const pendingTracking = localStorage.getItem("cs_pending_tracking_id");
+    if (pendingTracking) {
+      router.push("/tracking");
+    } else {
+      router.push("/onboarding");
+    }
   };
 
   const logout = () => {
