@@ -1,10 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { ArrowRight, Globe, Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import AnimatedSection from "./AnimatedSection";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { guardedTrack } from "@/lib/trackingGuard";
 
 const MapboxHero = dynamic(() => import("./MapboxHero"), {
   ssr: false,
@@ -19,6 +23,15 @@ const MapboxHero = dynamic(() => import("./MapboxHero"), {
 });
 
 export default function HeroSection() {
+  const [heroTrackingId, setHeroTrackingId] = useState("");
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  const handleHeroTrack = (e: React.FormEvent) => {
+    e.preventDefault();
+    const proceed = guardedTrack(heroTrackingId, isAuthenticated, router.push);
+    if (proceed) router.push(`/tracking?id=${encodeURIComponent(heroTrackingId)}`);
+  };
   return (
     <section id="hero" className="min-h-screen flex items-center pt-20 pb-12 relative overflow-hidden bg-[#1c1c1e]">
       {/* Grid bg */}
@@ -54,21 +67,23 @@ export default function HeroSection() {
               </p>
 
               {/* Tracking input */}
-              <div className="relative max-w-md">
+              <form onSubmit={handleHeroTrack} className="relative max-w-md">
                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-zinc-500" />
                 </div>
                 <input
                   type="text"
+                  value={heroTrackingId}
+                  onChange={e => setHeroTrackingId(e.target.value)}
                   placeholder="Enter Tracking ID, BL or Container #"
                   className="w-full h-12 pl-11 pr-36 rounded-xl text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-[#ff6d00] bg-[#252528] border border-white/[0.14] transition"
                 />
                 <div className="absolute right-1.5 top-1.5 bottom-1.5">
-                  <Button variant="accent" className="h-full px-4 text-sm rounded-lg">
+                  <Button type="submit" variant="accent" className="h-full px-4 text-sm rounded-lg">
                     Track Now
                   </Button>
                 </div>
-              </div>
+              </form>
 
               <div className="flex flex-wrap gap-4">
                 <Link href="/register">

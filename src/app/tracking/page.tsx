@@ -8,8 +8,7 @@ import { cn } from "@/lib/utils";
 import AnimatedSection from "@/components/marketing/AnimatedSection";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-
-const STORAGE_KEY = "cs_pending_tracking_id";
+import { guardedTrack, restorePendingTracking } from "@/lib/trackingGuard";
 
 const timeline = [
   { status: "In Transit", location: "Pacific Ocean", date: "Mar 20, 2026", time: "09:45 AM", active: true, done: false },
@@ -27,27 +26,19 @@ export default function TrackingPage() {
   // On mount: if user just came back after auth, restore pending tracking ID and auto-track
   useEffect(() => {
     if (isLoading) return;
-    const pending = localStorage.getItem(STORAGE_KEY);
-    if (pending && isAuthenticated) {
-      setTrackingId(pending);
-      setShowStatus(true);
-      localStorage.removeItem(STORAGE_KEY); // clear after use
+    if (isAuthenticated) {
+      const pending = restorePendingTracking();
+      if (pending) {
+        setTrackingId(pending);
+        setShowStatus(true);
+      }
     }
   }, [isAuthenticated, isLoading]);
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!trackingId.trim()) return;
-
-    if (!isAuthenticated) {
-      // Save container number and redirect to register
-      localStorage.setItem(STORAGE_KEY, trackingId.trim());
-      router.push("/register?redirect=tracking");
-      return;
-    }
-
-    // Authenticated — show results
-    setShowStatus(true);
+    const proceed = guardedTrack(trackingId, isAuthenticated, router.push);
+    if (proceed) setShowStatus(true);
   };
 
   return (

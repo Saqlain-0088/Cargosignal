@@ -38,31 +38,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string) => {
-    // Mock login logic
     const mockUser: User = { id: "u-123", email, name: "Demo User", companyId: "c-456" };
     localStorage.setItem("cargosignal_user", JSON.stringify(mockUser));
     setUser(mockUser);
-    // Check for pending tracking redirect
-    const pendingTracking = localStorage.getItem("cs_pending_tracking_id");
-    if (pendingTracking) {
-      router.push("/tracking");
-    } else {
-      router.push("/dashboard");
-    }
+    const pending = localStorage.getItem("cs_pending_tracking_id");
+    router.push(pending ? "/tracking" : "/dashboard");
   };
 
   const register = async (name: string, email: string) => {
-    // Mock register logic - no company yet
     const newUser: User = { id: `u-${Date.now()}`, email, name };
     localStorage.setItem("cargosignal_user", JSON.stringify(newUser));
     setUser(newUser);
-    // Check for pending tracking redirect
-    const pendingTracking = localStorage.getItem("cs_pending_tracking_id");
-    if (pendingTracking) {
-      router.push("/tracking");
-    } else {
-      router.push("/onboarding");
-    }
+    const pending = localStorage.getItem("cs_pending_tracking_id");
+    router.push(pending ? "/tracking" : "/onboarding");
   };
 
   const logout = () => {
