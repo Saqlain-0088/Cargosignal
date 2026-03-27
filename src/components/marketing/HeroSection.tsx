@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { ArrowRight, Globe, Search } from "lucide-react";
+import { Globe, Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import AnimatedSection from "./AnimatedSection";
 import Link from "next/link";
@@ -23,15 +23,16 @@ const MapboxHero = dynamic(() => import("./MapboxHero"), {
 });
 
 export default function HeroSection() {
-  const [heroTrackingId, setHeroTrackingId] = useState("");
+  const [trackingId, setTrackingId] = useState("");
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const handleHeroTrack = (e: React.FormEvent) => {
+  const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
-    const proceed = guardedTrack(heroTrackingId, isAuthenticated, router.push);
-    if (proceed) router.push(`/tracking?id=${encodeURIComponent(heroTrackingId)}`);
+    // Auth check happens HERE — before any navigation
+    guardedTrack(trackingId, isAuthenticated, router.push);
   };
+
   return (
     <section id="hero" className="min-h-screen flex items-center pt-20 pb-12 relative overflow-hidden bg-[#1c1c1e]">
       {/* Grid bg */}
@@ -66,15 +67,15 @@ export default function HeroSection() {
                 Monitor every container, vessel, and delivery across 120+ countries with live GPS tracking, instant alerts, and predictive ETAs.
               </p>
 
-              {/* Tracking input */}
-              <form onSubmit={handleHeroTrack} className="relative max-w-md">
+              {/* Single tracking action — auth check on submit */}
+              <form onSubmit={handleTrack} className="relative max-w-md">
                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-zinc-500" />
                 </div>
                 <input
                   type="text"
-                  value={heroTrackingId}
-                  onChange={e => setHeroTrackingId(e.target.value)}
+                  value={trackingId}
+                  onChange={e => setTrackingId(e.target.value)}
                   placeholder="Enter Tracking ID, BL or Container #"
                   className="w-full h-12 pl-11 pr-36 rounded-xl text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-[#ff6d00] bg-[#252528] border border-white/[0.14] transition"
                 />
@@ -86,12 +87,6 @@ export default function HeroSection() {
               </form>
 
               <div className="flex flex-wrap gap-4">
-                <Link href="/register">
-                  <Button variant="accent" className="gap-2 px-6">
-                    Start Tracking Free
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
                 <Link href="/quote">
                   <Button variant="dark-outline" className="px-6">
                     Get a Quote

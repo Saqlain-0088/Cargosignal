@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const mockUser: User = { id: "u-123", email, name: "Demo User", companyId: "c-456" };
     localStorage.setItem("cargosignal_user", JSON.stringify(mockUser));
     setUser(mockUser);
-    const pending = localStorage.getItem("cs_pending_tracking_id");
+    const pending = sessionStorage.getItem("cs_pending_tracking_id");
     router.push(pending ? "/tracking" : "/dashboard");
   };
 
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const newUser: User = { id: `u-${Date.now()}`, email, name };
     localStorage.setItem("cargosignal_user", JSON.stringify(newUser));
     setUser(newUser);
-    const pending = localStorage.getItem("cs_pending_tracking_id");
+    const pending = sessionStorage.getItem("cs_pending_tracking_id");
     router.push(pending ? "/tracking" : "/onboarding");
   };
 

@@ -23,7 +23,7 @@ export default function TrackingPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
-  // On mount: if user just came back after auth, restore pending tracking ID and auto-track
+  // On mount: restore pending tracking ID if user just came back after auth
   useEffect(() => {
     if (isLoading) return;
     if (isAuthenticated) {
@@ -37,8 +37,13 @@ export default function TrackingPage() {
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
-    const proceed = guardedTrack(trackingId, isAuthenticated, router.push);
-    if (proceed) setShowStatus(true);
+    // Auth check at the tracking page level too (belt-and-suspenders)
+    if (!trackingId.trim()) return;
+    if (!isAuthenticated) {
+      guardedTrack(trackingId, isAuthenticated, router.push);
+      return;
+    }
+    setShowStatus(true);
   };
 
   return (

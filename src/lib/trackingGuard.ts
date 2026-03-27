@@ -1,14 +1,16 @@
 /**
  * Centralized tracking auth guard.
- * Use this in any component that has a tracking form.
  *
- * Usage:
+ * Usage in any component with a tracking form:
+ *
  *   import { guardedTrack, restorePendingTracking } from "@/lib/trackingGuard";
  *
- *   // On form submit:
- *   guardedTrack(containerId, isAuthenticated, router);
+ *   // On form submit (homepage, tracking page, etc.):
+ *   guardedTrack(containerId, isAuthenticated, router.push);
+ *   // → if not authed: saves ID to sessionStorage, redirects to /register
+ *   // → if authed: redirects to /tracking with the ID
  *
- *   // On page mount (after auth):
+ *   // On /tracking page mount:
  *   const pending = restorePendingTracking();
  *   if (pending) { setTrackingId(pending); triggerTrack(); }
  */
@@ -16,52 +18,51 @@
 const STORAGE_KEY = "cs_pending_tracking_id";
 
 /**
- * Call on any tracking form submit.
- * - If authenticated: returns true (caller should proceed with tracking)
- * - If not authenticated: saves containerId to localStorage, redirects to /register, returns false
+ * Main guard — call on ANY tracking form submit across the project.
+ * - Empty input → does nothing, returns false
+ * - Not authenticated → saves ID, redirects to /register, returns false
+ * - Authenticated → redirects to /tracking with ID, returns false
+ *   (tracking page handles the actual display)
  */
 export function guardedTrack(
   containerId: string,
   isAuthenticated: boolean,
   push: (path: string) => void
-): boolean {
-  if (!containerId.trim()) return false; // no ID — do nothing
+): void {
+  const id = containerId.trim();
+  if (!id) return; // empty input — do nothing
 
-  if (isAuthenticated) return true; // proceed normally
+  if (!isAuthenticated) {
+    // Save and send to register — do NOT go to tracking page
+    sessionStorage.setItem(STORAGE_KEY, id);
+    push("/register");
+    return;
+  }
 
-  // Not authenticated — save and redirect
-  localStorage.setItem(STORAGE_KEY, containerId.trim());
-  push("/register?redirect=tracking");
-  return false;
+  // Authenticated — go to tracking page with the ID
+  sessionStorage.setItem(STORAGE_KEY, id);
+  push("/tracking");
 }
 
 /**
- * Call on mount of any tracking page/component after auth resolves.
+ * Call on /tracking page mount after auth resolves.
  * Returns the stored container ID and clears it, or null if none.
  */
 export function restorePendingTracking(): string | null {
   if (typeof window === "undefined") return null;
-  const pending = localStorage.getItem(STORAGE_KEY);
+  const pending = sessionStorage.getItem(STORAGE_KEY);
   if (pending) {
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
     return pending;
   }
   return null;
 }
 
 /**
- * Check if there's a pending tracking ID without consuming it.
- */
-export function hasPendingTracking(): boolean {
-  if (typeof window === "undefined") return false;
-  return !!localStorage.getItem(STORAGE_KEY);
-}
-
-/**
- * Clear any stored tracking ID (e.g. if user cancels auth).
+ * Clear any stored tracking ID (e.g. after successful result shown).
  */
 export function clearPendingTracking(): void {
   if (typeof window !== "undefined") {
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
   }
 }
