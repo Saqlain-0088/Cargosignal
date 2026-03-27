@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import MarketingLayout from "@/components/layout/MarketingLayout";
 import { Button } from "@/components/ui/Button";
-import { Search, Ship, MapPin, CheckCircle2, Package, Globe, Clock, Info, Lock } from "lucide-react";
+import { Search, Ship, MapPin, CheckCircle2, Package, Globe, Clock, Info, Lock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AnimatedSection from "@/components/marketing/AnimatedSection";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { guardedTrack, restorePendingTracking } from "@/lib/trackingGuard";
+import { restorePendingTracking } from "@/lib/trackingGuard";
+import Link from "next/link";
 
 const timeline = [
   { status: "In Transit", location: "Pacific Ocean", date: "Mar 20, 2026", time: "09:45 AM", active: true, done: false },
@@ -23,32 +24,47 @@ export default function TrackingPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
-  // On mount: restore pending tracking ID if user just came back after auth
   useEffect(() => {
     if (isLoading) return;
-    if (isAuthenticated) {
-      const pending = restorePendingTracking();
-      if (pending) {
-        setTrackingId(pending);
-        setShowStatus(true);
-      }
+
+    // ── HARD AUTH GATE ──
+    // If not authenticated, redirect to register immediately.
+    // No tracking data is ever shown to unauthenticated users.
+    if (!isAuthenticated) {
+      router.replace("/register");
+      return;
     }
-  }, [isAuthenticated, isLoading]);
+
+    // Authenticated — check for a pending tracking ID from the homepage
+    const pending = restorePendingTracking();
+    if (pending) {
+      setTrackingId(pending);
+      setShowStatus(true);
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
-    // Auth check at the tracking page level too (belt-and-suspenders)
-    if (!trackingId.trim()) return;
-    if (!isAuthenticated) {
-      guardedTrack(trackingId, isAuthenticated, router.push);
-      return;
-    }
+    // Double-check auth (should never reach here unauthenticated due to gate above)
+    if (!isAuthenticated || !trackingId.trim()) return;
     setShowStatus(true);
   };
 
+  // Show loading spinner while auth state resolves
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#1c1c1e] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-[#ff6d00] animate-spin" />
+      </div>
+    );
+  }
+
+  // Don't render anything for unauthenticated users — redirect is in progress
+  if (!isAuthenticated) return null;
+
   return (
     <MarketingLayout>
-      <section className="py-16 bg-[#0f0f0f]">
+      <section className="py-16 bg-[#1c1c1e]">
         <div className="max-w-5xl mx-auto px-6">
           <AnimatedSection>
             <div className="text-center mb-12">
@@ -62,26 +78,20 @@ export default function TrackingPage() {
                 <input
                   type="text" value={trackingId} onChange={(e) => setTrackingId(e.target.value)}
                   placeholder="e.g. CS-12345678"
-                  className="w-full h-14 pl-12 pr-36 rounded-xl text-sm text-white placeholder:text-zinc-600 bg-[#1a1a1a] border border-white/10 outline-none focus:ring-1 focus:ring-[#ff6d00] transition"
+                  className="w-full h-14 pl-12 pr-36 rounded-xl text-sm text-white placeholder:text-zinc-600 bg-[#252528] border border-white/[0.14] outline-none focus:ring-1 focus:ring-[#ff6d00] transition"
                 />
                 <div className="absolute right-2 top-2 bottom-2">
                   <Button type="submit" variant="accent" className="h-full px-6 rounded-lg">Track Now</Button>
                 </div>
               </form>
-              {!isAuthenticated && !isLoading && (
-                <p className="text-xs text-zinc-600 mt-3 flex items-center justify-center gap-1.5">
-                  <Lock className="h-3 w-3" />
-                  Sign in or register to view tracking results
-                </p>
-              )}
             </div>
           </AnimatedSection>
 
           {showStatus ? (
             <AnimatedSection>
-              <div className="rounded-xl bg-[#1a1a1a] border border-white/10 overflow-hidden">
+              <div className="rounded-xl bg-[#252528] border border-white/[0.14] overflow-hidden">
                 {/* Banner */}
-                <div className="bg-[#0f0f0f] p-6 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-white/10">
+                <div className="bg-[#1c1c1e] p-6 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-white/[0.14]">
                   <div className="flex items-center gap-4">
                     <div className="bg-[#ff6d00] p-3 rounded-xl"><Ship className="h-5 w-5 text-white" /></div>
                     <div>
@@ -96,7 +106,7 @@ export default function TrackingPage() {
                 </div>
 
                 {/* Details */}
-                <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6 border-b border-white/10">
+                <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6 border-b border-white/[0.14]">
                   {[
                     { label: "Shipment ID", value: trackingId },
                     { label: "Vessel", value: "MAERSK HOUSTON" },
@@ -118,7 +128,7 @@ export default function TrackingPage() {
                     {timeline.map((step, i) => (
                       <div key={i} className="relative z-10 flex gap-6 pb-8 last:pb-0">
                         <div className={cn("w-9 h-9 rounded-full flex items-center justify-center border-2 shrink-0 transition-all",
-                          step.done ? "bg-green-500 border-green-500" : step.active ? "bg-[#0f0f0f] border-[#ff6d00]" : "bg-[#0f0f0f] border-white/20")}>
+                          step.done ? "bg-green-500 border-green-500" : step.active ? "bg-[#1c1c1e] border-[#ff6d00]" : "bg-[#1c1c1e] border-white/20")}>
                           {step.done ? <CheckCircle2 className="h-4 w-4 text-white" /> : step.active ? <div className="w-2.5 h-2.5 bg-[#ff6d00] rounded-full animate-pulse" /> : <div className="w-2 h-2 bg-white/20 rounded-full" />}
                         </div>
                         <div className="flex-1">
@@ -143,7 +153,7 @@ export default function TrackingPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-40">
               {[{ icon: Globe, label: "Global Coverage" }, { icon: Package, label: "Every Cargo Type" }, { icon: Clock, label: "24/7 Monitoring" }].map((item) => (
-                <div key={item.label} className="bg-[#1a1a1a] rounded-xl p-6 border border-white/10 text-center">
+                <div key={item.label} className="bg-[#252528] rounded-xl p-6 border border-white/[0.14] text-center">
                   <item.icon className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
                   <div className="text-sm font-bold text-zinc-500">{item.label}</div>
                 </div>
