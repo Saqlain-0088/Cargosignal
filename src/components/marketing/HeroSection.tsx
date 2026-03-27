@@ -8,7 +8,7 @@ import AnimatedSection from "./AnimatedSection";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { guardedTrack } from "@/lib/trackingGuard";
+import { storePendingTrack } from "@/lib/trackingGuard";
 
 const MapboxHero = dynamic(() => import("./MapboxHero"), {
   ssr: false,
@@ -23,33 +23,41 @@ const MapboxHero = dynamic(() => import("./MapboxHero"), {
 });
 
 export default function HeroSection() {
-  const [trackingId, setTrackingId] = useState("");
+  const [containerNumber, setContainerNumber] = useState("");
+  const [validationError, setValidationError] = useState("");
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const handleTrack = (e: React.FormEvent) => {
+  const handleTrackNow = (e: React.FormEvent) => {
     e.preventDefault();
-    // Auth check happens HERE — before any navigation
-    guardedTrack(trackingId, isAuthenticated, router.push);
+
+    // Step 1: Validate input
+    if (!containerNumber.trim()) {
+      setValidationError("Please enter a container number");
+      return;
+    }
+
+    setValidationError("");
+
+    // Step 2: Check authentication BEFORE any navigation
+    if (!isAuthenticated) {
+      // Store container number, redirect to register — STOP here
+      storePendingTrack(containerNumber.trim());
+      router.push("/register");
+      return;
+    }
+
+    // Step 3: Authenticated — navigate to tracking page
+    router.push("/tracking");
   };
 
   return (
     <section id="hero" className="min-h-screen flex items-center pt-20 pb-12 relative overflow-hidden bg-[#1c1c1e]">
-      {/* Grid bg */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
-      {/* Glow */}
+      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
       <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[120px] opacity-[0.09] bg-[#ff6d00] pointer-events-none" />
 
       <div className="relative w-full max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-
-          {/* Left */}
           <AnimatedSection>
             <div className="space-y-7">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border border-[#ff6d00]/30 bg-[#ff6d00]/10 text-[#ff6d00]">
@@ -67,30 +75,35 @@ export default function HeroSection() {
                 Monitor every container, vessel, and delivery across 120+ countries with live GPS tracking, instant alerts, and predictive ETAs.
               </p>
 
-              {/* Single tracking action — auth check on submit */}
-              <form onSubmit={handleTrack} className="relative max-w-md">
-                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-zinc-500" />
-                </div>
-                <input
-                  type="text"
-                  value={trackingId}
-                  onChange={e => setTrackingId(e.target.value)}
-                  placeholder="Enter Tracking ID, BL or Container #"
-                  className="w-full h-12 pl-11 pr-36 rounded-xl text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-[#ff6d00] bg-[#252528] border border-white/[0.14] transition"
-                />
-                <div className="absolute right-1.5 top-1.5 bottom-1.5">
-                  <Button type="submit" variant="accent" className="h-full px-4 text-sm rounded-lg">
-                    Track Now
-                  </Button>
-                </div>
-              </form>
+              {/* Single tracking action */}
+              <div className="max-w-md">
+                <form onSubmit={handleTrackNow} className="relative">
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-zinc-500" />
+                  </div>
+                  <input
+                    type="text"
+                    value={containerNumber}
+                    onChange={e => { setContainerNumber(e.target.value); setValidationError(""); }}
+                    placeholder="Enter Tracking ID, BL or Container #"
+                    className="w-full h-12 pl-11 pr-36 rounded-xl text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-[#ff6d00] bg-[#252528] border border-white/[0.14] transition"
+                  />
+                  <div className="absolute right-1.5 top-1.5 bottom-1.5">
+                    <Button type="submit" variant="accent" className="h-full px-4 text-sm rounded-lg">
+                      Track Now
+                    </Button>
+                  </div>
+                </form>
+                {validationError && (
+                  <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
+                    <span>⚠</span> {validationError}
+                  </p>
+                )}
+              </div>
 
               <div className="flex flex-wrap gap-4">
                 <Link href="/quote">
-                  <Button variant="dark-outline" className="px-6">
-                    Get a Quote
-                  </Button>
+                  <Button variant="dark-outline" className="px-6">Get a Quote</Button>
                 </Link>
               </div>
 
@@ -98,7 +111,6 @@ export default function HeroSection() {
             </div>
           </AnimatedSection>
 
-          {/* Right: Mapbox */}
           <AnimatedSection delay={0.2} className="h-[480px] lg:h-[560px]">
             <MapboxHero />
           </AnimatedSection>

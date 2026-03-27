@@ -3,13 +3,12 @@
 import { useState, useEffect } from "react";
 import MarketingLayout from "@/components/layout/MarketingLayout";
 import { Button } from "@/components/ui/Button";
-import { Search, Ship, MapPin, CheckCircle2, Package, Globe, Clock, Info, Lock, Loader2 } from "lucide-react";
+import { Search, Ship, MapPin, CheckCircle2, Package, Globe, Clock, Info, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AnimatedSection from "@/components/marketing/AnimatedSection";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { restorePendingTracking } from "@/lib/trackingGuard";
-import Link from "next/link";
+import { consumePendingTrack } from "@/lib/trackingGuard";
 
 const timeline = [
   { status: "In Transit", location: "Pacific Ocean", date: "Mar 20, 2026", time: "09:45 AM", active: true, done: false },
@@ -20,34 +19,41 @@ const timeline = [
 
 export default function TrackingPage() {
   const [trackingId, setTrackingId] = useState("");
+  const [validationError, setValidationError] = useState("");
   const [showStatus, setShowStatus] = useState(false);
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // ── HARD AUTH GATE ──
-    // Fires on first render. isLoading is always false (sync auth read).
+    // Hard gate — unauthenticated users are redirected immediately
     if (!isAuthenticated) {
       router.replace("/register");
       return;
     }
-    // Authenticated — check for a pending tracking ID from the homepage
-    const pending = restorePendingTracking();
+    // Consume any pending container number stored before auth
+    const pending = consumePendingTrack();
     if (pending) {
       setTrackingId(pending);
       setShowStatus(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // run once on mount — auth state is synchronously available
+  }, []);
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
-    // Double-check auth (should never reach here unauthenticated due to gate above)
-    if (!isAuthenticated || !trackingId.trim()) return;
+    if (!trackingId.trim()) {
+      setValidationError("Please enter a container number");
+      return;
+    }
+    if (!isAuthenticated) {
+      router.replace("/register");
+      return;
+    }
+    setValidationError("");
     setShowStatus(true);
   };
 
-  // Show nothing while redirect is in progress (unauthenticated)
+  // Block render for unauthenticated users
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#1c1c1e] flex items-center justify-center">
@@ -65,26 +71,33 @@ export default function TrackingPage() {
               <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border border-[#ff6d00]/30 bg-[#ff6d00]/10 text-[#ff6d00]">Live Tracking</div>
               <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Track Your <span className="text-[#ff6d00]">Shipment</span></h1>
               <p className="text-zinc-400 mb-8">Enter your Tracking ID, Bill of Lading, or Container Number.</p>
-              <form onSubmit={handleTrack} className="relative max-w-2xl mx-auto">
-                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-zinc-500" />
-                </div>
-                <input
-                  type="text" value={trackingId} onChange={(e) => setTrackingId(e.target.value)}
-                  placeholder="e.g. CS-12345678"
-                  className="w-full h-14 pl-12 pr-36 rounded-xl text-sm text-white placeholder:text-zinc-600 bg-[#252528] border border-white/[0.14] outline-none focus:ring-1 focus:ring-[#ff6d00] transition"
-                />
-                <div className="absolute right-2 top-2 bottom-2">
-                  <Button type="submit" variant="accent" className="h-full px-6 rounded-lg">Track Now</Button>
-                </div>
-              </form>
+              <div className="max-w-2xl mx-auto">
+                <form onSubmit={handleTrack} className="relative">
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-zinc-500" />
+                  </div>
+                  <input
+                    type="text" value={trackingId}
+                    onChange={e => { setTrackingId(e.target.value); setValidationError(""); }}
+                    placeholder="e.g. CS-12345678"
+                    className="w-full h-14 pl-12 pr-36 rounded-xl text-sm text-white placeholder:text-zinc-600 bg-[#252528] border border-white/[0.14] outline-none focus:ring-1 focus:ring-[#ff6d00] transition"
+                  />
+                  <div className="absolute right-2 top-2 bottom-2">
+                    <Button type="submit" variant="accent" className="h-full px-6 rounded-lg">Track Now</Button>
+                  </div>
+                </form>
+                {validationError && (
+                  <p className="text-xs text-red-400 mt-2 text-left flex items-center gap-1">
+                    <span>⚠</span> {validationError}
+                  </p>
+                )}
+              </div>
             </div>
           </AnimatedSection>
 
           {showStatus ? (
             <AnimatedSection>
               <div className="rounded-xl bg-[#252528] border border-white/[0.14] overflow-hidden">
-                {/* Banner */}
                 <div className="bg-[#1c1c1e] p-6 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-white/[0.14]">
                   <div className="flex items-center gap-4">
                     <div className="bg-[#ff6d00] p-3 rounded-xl"><Ship className="h-5 w-5 text-white" /></div>
@@ -98,30 +111,26 @@ export default function TrackingPage() {
                     <div className="text-xl font-bold text-[#ff6d00]">Mar 25, 2026</div>
                   </div>
                 </div>
-
-                {/* Details */}
                 <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6 border-b border-white/[0.14]">
                   {[
                     { label: "Shipment ID", value: trackingId },
                     { label: "Vessel", value: "MAERSK HOUSTON" },
                     { label: "Origin", value: "SHANGHAI, CN" },
                     { label: "Destination", value: "LONG BEACH, US" },
-                  ].map((d) => (
+                  ].map(d => (
                     <div key={d.label}>
                       <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">{d.label}</div>
                       <div className="font-bold text-white text-sm">{d.value}</div>
                     </div>
                   ))}
                 </div>
-
-                {/* Timeline */}
                 <div className="p-6">
                   <h3 className="font-bold text-white mb-6">Tracking History</h3>
                   <div className="space-y-0 relative">
                     <div className="absolute left-4 top-1 bottom-1 w-px bg-white/10" />
                     {timeline.map((step, i) => (
                       <div key={i} className="relative z-10 flex gap-6 pb-8 last:pb-0">
-                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center border-2 shrink-0 transition-all",
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center border-2 shrink-0",
                           step.done ? "bg-green-500 border-green-500" : step.active ? "bg-[#1c1c1e] border-[#ff6d00]" : "bg-[#1c1c1e] border-white/20")}>
                           {step.done ? <CheckCircle2 className="h-4 w-4 text-white" /> : step.active ? <div className="w-2.5 h-2.5 bg-[#ff6d00] rounded-full animate-pulse" /> : <div className="w-2 h-2 bg-white/20 rounded-full" />}
                         </div>
@@ -136,8 +145,6 @@ export default function TrackingPage() {
                     ))}
                   </div>
                 </div>
-
-                {/* AI note */}
                 <div className="p-4 bg-[#ff6d00]/5 border-t border-[#ff6d00]/20 flex items-center gap-3">
                   <Info className="h-4 w-4 text-[#ff6d00] shrink-0" />
                   <p className="text-xs text-zinc-400"><span className="text-white font-semibold">AI Prediction:</span> Weather patterns indicate a potential 6-hour delay near Port of Long Beach.</p>
@@ -146,7 +153,7 @@ export default function TrackingPage() {
             </AnimatedSection>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-40">
-              {[{ icon: Globe, label: "Global Coverage" }, { icon: Package, label: "Every Cargo Type" }, { icon: Clock, label: "24/7 Monitoring" }].map((item) => (
+              {[{ icon: Globe, label: "Global Coverage" }, { icon: Package, label: "Every Cargo Type" }, { icon: Clock, label: "24/7 Monitoring" }].map(item => (
                 <div key={item.label} className="bg-[#252528] rounded-xl p-6 border border-white/[0.14] text-center">
                   <item.icon className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
                   <div className="text-sm font-bold text-zinc-500">{item.label}</div>
