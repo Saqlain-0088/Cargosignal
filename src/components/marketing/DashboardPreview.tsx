@@ -1,107 +1,155 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowDownRight, Ship, AlertTriangle, Clock, TrendingUp } from "lucide-react";
-
-const kpis = [
-  { label: "Total Shipments", value: "1,284", change: "+12%", up: true, icon: Ship, color: "#3b82f6" },
-  { label: "Delayed", value: "23", change: "-4%", up: false, icon: AlertTriangle, color: "#f59e0b" },
-  { label: "ETA Accuracy", value: "98.4%", change: "+0.6%", up: true, icon: Clock, color: "#10b981" },
-  { label: "On-Time Rate", value: "94.2%", change: "+1.2%", up: true, icon: TrendingUp, color: "#8b5cf6" },
-];
-
-const shipments = [
-  { id: "CS-8821", route: "Mumbai → LA", status: "In Transit", progress: 72, color: "#3b82f6" },
-  { id: "CS-8820", route: "Dubai → Hamburg", status: "Customs Hold", progress: 45, color: "#f59e0b" },
-  { id: "CS-8819", route: "Shanghai → Rotterdam", status: "Delivered", progress: 100, color: "#10b981" },
-  { id: "CS-8818", route: "Singapore → NY", status: "In Transit", progress: 30, color: "#3b82f6" },
-  { id: "CS-8817", route: "Tokyo → LA", status: "Delivered", progress: 100, color: "#10b981" },
-];
+import Link from "next/link";
+import { ArrowRight, ExternalLink } from "lucide-react";
 
 export default function DashboardPreview() {
   return (
     <section id="dashboard" className="py-28 bg-[#030609]">
       <div className="max-w-7xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7 }}
-          className="text-center mb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-16"
+        >
           <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-widest mb-4 border border-blue-500/25 bg-blue-500/8 text-blue-400">
             Platform Preview
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">Your Logistics Command Center</h2>
-          <p className="text-zinc-500 max-w-xl mx-auto">Everything you need to manage global shipments in one unified dashboard.</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">
+            Your Logistics Command Center
+          </h2>
+          <p className="text-zinc-500 max-w-xl mx-auto">
+            Everything you need to manage global shipments in one unified dashboard.
+          </p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.8 }}
-          className="rounded-2xl border border-white/10 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #0a1628 0%, #060b14 100%)", boxShadow: "0 0 100px rgba(59,130,246,0.06), 0 60px 120px rgba(0,0,0,0.7)" }}>
-
-          {/* Browser chrome */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-white/8 bg-white/[0.015]">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.8 }}
+          className="relative rounded-2xl border border-white/10 overflow-hidden group"
+          style={{
+            boxShadow: "0 0 100px rgba(59,130,246,0.08), 0 60px 120px rgba(0,0,0,0.8)",
+          }}
+        >
+          {/* Browser chrome bar */}
+          <div
+            className="flex items-center justify-between px-5 py-3 border-b border-white/8 z-10 relative"
+            style={{ background: "rgba(10,22,40,0.98)" }}
+          >
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500/50" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-              <div className="w-3 h-3 rounded-full bg-green-500/50" />
+              <div className="w-3 h-3 rounded-full bg-red-500/60" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+              <div className="w-3 h-3 rounded-full bg-green-500/60" />
             </div>
-            <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-white/5 border border-white/8">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/8">
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[10px] text-zinc-500 font-mono">app.cargosignal.com/dashboard</span>
+              <span className="text-[11px] text-zinc-400 font-mono">
+                app.cargosignal.com/dashboard
+              </span>
             </div>
-            <div className="text-[10px] text-zinc-600">Live</div>
+            <Link
+              href="/dashboard"
+              target="_blank"
+              className="flex items-center gap-1 text-[10px] text-zinc-500 hover:text-blue-400 transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Open
+            </Link>
           </div>
 
-          <div className="p-6">
-            {/* KPIs */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {kpis.map((kpi, i) => (
-                <motion.div key={kpi.label}
-                  initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                  className="rounded-xl p-4 border border-white/8 bg-white/[0.02]">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: kpi.color + "15" }}>
-                      <kpi.icon className="h-4 w-4" style={{ color: kpi.color }} />
-                    </div>
-                    <div className={`flex items-center gap-0.5 text-[10px] font-bold ${kpi.up ? "text-green-400" : "text-red-400"}`}>
-                      {kpi.up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                      {kpi.change}
-                    </div>
-                  </div>
-                  <div className="text-xl font-extrabold text-white mb-0.5">{kpi.value}</div>
-                  <div className="text-[10px] text-zinc-600 uppercase tracking-wider">{kpi.label}</div>
-                </motion.div>
-              ))}
-            </div>
+          {/* Live iframe of the real dashboard */}
+          <div className="relative w-full" style={{ height: "600px" }}>
+            <iframe
+              src="/dashboard"
+              className="w-full h-full border-0 block"
+              style={{
+                transform: "scale(0.85)",
+                transformOrigin: "top left",
+                width: "117.6%",   /* 1 / 0.85 */
+                height: "117.6%",
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+              tabIndex={-1}
+              aria-hidden="true"
+              title="CargoSignal Dashboard Preview"
+            />
 
-            {/* Table */}
-            <div className="rounded-xl border border-white/8 overflow-hidden bg-white/[0.015]">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
-                <span className="text-sm font-bold text-white">Active Shipments</span>
-                <span className="text-xs text-blue-400 cursor-pointer">View all →</span>
-              </div>
-              <div className="divide-y divide-white/[0.04]">
-                {shipments.map((s, i) => (
-                  <motion.div key={s.id}
-                    initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }} transition={{ delay: i * 0.06 }}
-                    className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.02] transition-colors">
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                    <div className="w-24 shrink-0 text-xs font-mono text-zinc-400">{s.id}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-zinc-500 mb-1.5 truncate">{s.route}</div>
-                      <div className="h-1 bg-white/8 rounded-full overflow-hidden">
-                        <motion.div className="h-full rounded-full"
-                          initial={{ width: 0 }} whileInView={{ width: `${s.progress}%` }}
-                          viewport={{ once: true }} transition={{ duration: 1, delay: i * 0.1, ease: "easeOut" }}
-                          style={{ backgroundColor: s.color }} />
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                      style={{ background: s.color + "18", color: s.color }}>{s.status}</span>
-                  </motion.div>
-                ))}
+            {/* Gradient fade at bottom */}
+            <div
+              className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none z-10"
+              style={{
+                background:
+                  "linear-gradient(to top, #030609 0%, rgba(3,6,9,0.6) 60%, transparent 100%)",
+              }}
+            />
+
+            {/* CTA overlay on hover */}
+            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div
+                className="rounded-2xl border border-white/10 px-8 py-6 text-center backdrop-blur-xl"
+                style={{ background: "rgba(3,6,9,0.85)" }}
+              >
+                <p className="text-white font-bold text-lg mb-1">
+                  See it live in action
+                </p>
+                <p className="text-zinc-400 text-sm mb-5">
+                  Sign up free and get full access to the dashboard
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <Link href="/register">
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="flex items-center gap-2 h-10 px-6 rounded-xl text-sm font-bold text-white"
+                      style={{
+                        background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                        boxShadow: "0 4px 20px rgba(37,99,235,0.4)",
+                      }}
+                    >
+                      Start Free Trial <ArrowRight className="h-4 w-4" />
+                    </motion.button>
+                  </Link>
+                  <Link href="/login">
+                    <button className="h-10 px-5 rounded-xl text-sm font-semibold text-zinc-300 border border-white/15 hover:border-white/30 hover:text-white transition-all">
+                      Log In
+                    </button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
+        </motion.div>
+
+        {/* Below-frame CTA for mobile */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8"
+        >
+          <Link href="/register">
+            <button
+              className="flex items-center gap-2 h-11 px-7 rounded-xl text-sm font-bold text-white transition-all"
+              style={{
+                background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                boxShadow: "0 4px 20px rgba(37,99,235,0.3)",
+              }}
+            >
+              Start Free Trial <ArrowRight className="h-4 w-4" />
+            </button>
+          </Link>
+          <Link href="/dashboard" target="_blank">
+            <button className="flex items-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold text-zinc-400 border border-white/10 hover:border-white/20 hover:text-white transition-all">
+              <ExternalLink className="h-4 w-4" /> View Live Dashboard
+            </button>
+          </Link>
         </motion.div>
       </div>
     </section>
