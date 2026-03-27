@@ -36,7 +36,7 @@ const features = [
 
 export default function FeatureCards() {
   return (
-    <section className="py-24 bg-[#0d1120]">
+    <section className="py-24 bg-[#0d1120]" id="features">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
           className="text-center mb-14">
