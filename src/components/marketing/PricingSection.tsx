@@ -4,6 +4,9 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 const plans = [
   {
@@ -28,6 +31,27 @@ const plans = [
 
 export default function PricingSection() {
   const [yearly, setYearly] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const { success, warning } = useToast();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  const handlePlan = async (planName: string, cta: string) => {
+    if (loadingPlan) return;
+    if (planName === "Enterprise") {
+      router.push("#contact");
+      return;
+    }
+    if (!isAuthenticated) {
+      warning("Sign in required", "Create a free account to start your trial.");
+      router.push("/register");
+      return;
+    }
+    setLoadingPlan(planName);
+    await new Promise(r => setTimeout(r, 1000));
+    setLoadingPlan(null);
+    success(`${planName} plan selected!`, "Your subscription has been activated.");
+  };
 
   return (
     <section id="pricing" className="py-24 bg-[#0d1120]">
@@ -87,11 +111,16 @@ export default function PricingSection() {
                   </li>
                 ))}
               </ul>
-              <button className={cn("w-full h-11 rounded-xl text-sm font-semibold transition-all",
-                plan.highlight
-                  ? "bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20"
-                  : "border border-white/20 text-white hover:bg-white/5")}>
-                {plan.cta}
+              <button
+                onClick={() => handlePlan(plan.name, plan.cta)}
+                disabled={loadingPlan === plan.name}
+                className={cn("w-full h-11 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2",
+                  plan.highlight
+                    ? "bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20"
+                    : "border border-white/20 text-white hover:bg-white/5")}>
+                {loadingPlan === plan.name
+                  ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : plan.cta}
               </button>
             </motion.div>
           ))}
