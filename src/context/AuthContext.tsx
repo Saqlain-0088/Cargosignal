@@ -23,19 +23,21 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Synchronous initial auth check — reads localStorage before first render
+  const getInitialUser = (): User | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const stored = localStorage.getItem("cargosignal_user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const [user, setUser] = useState<User | null>(getInitialUser);
+  const [isLoading, setIsLoading] = useState(false); // no async needed — sync read
   const router = useRouter();
   const pathname = usePathname();
-
-  useEffect(() => {
-    // Check localStorage on mount
-    const storedUser = localStorage.getItem("cargosignal_user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
 
   const login = async (email: string) => {
     const mockUser: User = { id: "u-123", email, name: "Demo User", companyId: "c-456" };

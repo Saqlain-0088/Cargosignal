@@ -21,27 +21,24 @@ const timeline = [
 export default function TrackingPage() {
   const [trackingId, setTrackingId] = useState("");
   const [showStatus, setShowStatus] = useState(false);
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return;
-
     // ── HARD AUTH GATE ──
-    // If not authenticated, redirect to register immediately.
-    // No tracking data is ever shown to unauthenticated users.
+    // Fires on first render. isLoading is always false (sync auth read).
     if (!isAuthenticated) {
       router.replace("/register");
       return;
     }
-
     // Authenticated — check for a pending tracking ID from the homepage
     const pending = restorePendingTracking();
     if (pending) {
       setTrackingId(pending);
       setShowStatus(true);
     }
-  }, [isAuthenticated, isLoading, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount — auth state is synchronously available
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,17 +47,14 @@ export default function TrackingPage() {
     setShowStatus(true);
   };
 
-  // Show loading spinner while auth state resolves
-  if (isLoading) {
+  // Show nothing while redirect is in progress (unauthenticated)
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#1c1c1e] flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-[#ff6d00] animate-spin" />
       </div>
     );
   }
-
-  // Don't render anything for unauthenticated users — redirect is in progress
-  if (!isAuthenticated) return null;
 
   return (
     <MarketingLayout>
