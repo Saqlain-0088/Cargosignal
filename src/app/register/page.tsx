@@ -85,7 +85,57 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex bg-[#030609]">
-      {/* Left — form */}
+
+      {/* Left — visual/branding panel */}
+      <div className="hidden lg:flex lg:w-[52%] relative flex-col justify-between p-12 overflow-hidden">
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 120% 100% at 70% 50%, #0a1628 0%, #060b14 60%, #030609 100%)" }} />
+        {Array.from({ length: 40 }).map((_, i) => (
+          <div key={i} className="absolute rounded-full bg-white"
+            style={{ width: i % 4 === 0 ? 2 : 1, height: i % 4 === 0 ? 2 : 1, left: `${(i * 23.1) % 100}%`, top: `${(i * 11.9) % 100}%`, opacity: 0.05 + (i % 3) * 0.04 }} />
+        ))}
+        <div className="relative z-10">
+          <Link href="/" className="flex items-center gap-2.5 w-fit group">
+            <div className="bg-blue-600 p-2 rounded-xl group-hover:bg-blue-500 transition-colors"><Globe className="h-5 w-5 text-white" /></div>
+            <span className="text-xl font-extrabold text-white tracking-tight">CargoSignal</span>
+          </Link>
+        </div>
+        <div className="relative z-10 space-y-8">
+          <div>
+            <h2 className="text-3xl font-black text-white leading-tight mb-3">
+              One Platform for Your<br />
+              <span className="text-transparent bg-clip-text" style={{ backgroundImage: "linear-gradient(135deg, #34d399, #60a5fa)" }}>Entire Supply Chain</span>
+            </h2>
+            <p className="text-zinc-500 text-sm leading-relaxed max-w-sm">From supplier to final delivery — every step tracked, every alert automated.</p>
+          </div>
+          <div className="space-y-4">
+            {steps.map((step, i) => (
+              <motion.div key={step} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.1 }}
+                className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-[11px] font-black text-white shrink-0">{i + 1}</div>
+                <span className="text-sm text-zinc-400">{step}</span>
+              </motion.div>
+            ))}
+          </div>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
+            className="rounded-2xl border border-white/10 p-5 backdrop-blur-sm" style={{ background: "rgba(255,255,255,0.02)" }}>
+            <div className="flex gap-0.5 mb-3">{[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}</div>
+            <p className="text-sm text-zinc-300 italic leading-relaxed mb-4">"{testimonial.quote}"</p>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">{testimonial.initials}</div>
+              <div>
+                <div className="text-xs font-bold text-white">{testimonial.name}</div>
+                <div className="text-[10px] text-zinc-600">{testimonial.title}</div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+        <div className="relative z-10 flex items-center gap-4 text-xs text-zinc-700">
+          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-500" />Free 14-day trial</span>
+          <span>·</span><span>No credit card</span><span>·</span><span>Cancel anytime</span>
+        </div>
+      </div>
+
+      {/* Right — form */}
       <div className="flex-1 flex items-center justify-center p-8 relative">
         <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 30%, rgba(16,185,129,0.03) 0%, transparent 60%)" }} />
         <motion.div className="w-full max-w-sm relative z-10"
@@ -175,54 +225,6 @@ export default function RegisterPage() {
         </motion.div>
       </div>
 
-      {/* Right — visual */}
-      <div className="hidden lg:flex lg:w-[52%] relative flex-col justify-between p-12 overflow-hidden">
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 120% 100% at 30% 50%, #0a1628 0%, #060b14 60%, #030609 100%)" }} />
-        {Array.from({ length: 40 }).map((_, i) => (
-          <div key={i} className="absolute rounded-full bg-white"
-            style={{ width: i % 4 === 0 ? 2 : 1, height: i % 4 === 0 ? 2 : 1, left: `${(i * 23.1) % 100}%`, top: `${(i * 11.9) % 100}%`, opacity: 0.05 + (i % 3) * 0.04 }} />
-        ))}
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2.5 w-fit group">
-            <div className="bg-blue-600 p-2 rounded-xl group-hover:bg-blue-500 transition-colors"><Globe className="h-5 w-5 text-white" /></div>
-            <span className="text-xl font-extrabold text-white tracking-tight">CargoSignal</span>
-          </Link>
-        </div>
-        <div className="relative z-10 space-y-8">
-          <div>
-            <h2 className="text-3xl font-black text-white leading-tight mb-3">
-              One Platform for Your<br />
-              <span className="text-transparent bg-clip-text" style={{ backgroundImage: "linear-gradient(135deg, #34d399, #60a5fa)" }}>Entire Supply Chain</span>
-            </h2>
-            <p className="text-zinc-500 text-sm leading-relaxed max-w-sm">From supplier to final delivery — every step tracked, every alert automated.</p>
-          </div>
-          <div className="space-y-4">
-            {steps.map((step, i) => (
-              <motion.div key={step} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.1 }}
-                className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-[11px] font-black text-white shrink-0">{i + 1}</div>
-                <span className="text-sm text-zinc-400">{step}</span>
-              </motion.div>
-            ))}
-          </div>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
-            className="rounded-2xl border border-white/10 p-5 backdrop-blur-sm" style={{ background: "rgba(255,255,255,0.02)" }}>
-            <div className="flex gap-0.5 mb-3">{[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}</div>
-            <p className="text-sm text-zinc-300 italic leading-relaxed mb-4">"{testimonial.quote}"</p>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">{testimonial.initials}</div>
-              <div>
-                <div className="text-xs font-bold text-white">{testimonial.name}</div>
-                <div className="text-[10px] text-zinc-600">{testimonial.title}</div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-        <div className="relative z-10 flex items-center gap-4 text-xs text-zinc-700">
-          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-500" />Free 14-day trial</span>
-          <span>·</span><span>No credit card</span><span>·</span><span>Cancel anytime</span>
-        </div>
-      </div>
     </div>
   );
 }
