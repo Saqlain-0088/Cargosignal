@@ -30,31 +30,32 @@ function SuperAdminLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { currentMember, currentRole, logout, hasPermission } = useAdminAuth();
 
-  const visibleNav = navItems.filter(item => hasPermission(item.permission));
+  // Don't wrap login page in the shell
+  if (pathname === "/superadmin/login") {
+    return <>{children}</>;
+  }
 
-  const handleLogout = () => { logout(); router.push("/admin/login"); };
+  // Show all nav if role not yet resolved (hydration), filter once role is known
+  const visibleNav = currentRole ? navItems.filter(item => hasPermission(item.permission)) : navItems;
+  const handleLogout = () => { logout(); router.push("/superadmin/login"); };
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "#020d1a" }}>
+    <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col border-r transition-all duration-300",
+        "fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 shadow-sm",
         collapsed ? "w-16" : "w-60",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-      )}
-        style={{ background: "#030f1f", borderColor: "rgba(59,130,246,0.15)" }}>
-
+      )}>
         {/* Logo */}
-        <div className={cn("flex items-center gap-3 p-4 border-b h-16", collapsed && "justify-center")}
-          style={{ borderColor: "rgba(59,130,246,0.15)" }}>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)", boxShadow: "0 0 12px rgba(37,99,235,0.4)" }}>
+        <div className={cn("flex items-center gap-3 p-4 border-b border-slate-100 h-16", collapsed && "justify-center")}>
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 shadow-sm">
             <ShieldAlert className="h-4 w-4 text-white" />
           </div>
           {!collapsed && (
             <div>
-              <div className="text-sm font-bold text-white leading-none">CargoSignal</div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#60a5fa" }}>Super Admin</div>
+              <div className="text-sm font-bold text-slate-800 leading-none">CargoSignal</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-600">Super Admin</div>
             </div>
           )}
         </div>
@@ -67,18 +68,15 @@ function SuperAdminLayoutInner({ children }: { children: React.ReactNode }) {
               <Link key={item.href} href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group",
-                  active ? "text-white" : "text-zinc-500 hover:text-white",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
+                  active
+                    ? "bg-blue-50 text-blue-700 border border-blue-100"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
                   collapsed && "justify-center px-2"
                 )}
-                style={active ? {
-                  background: "linear-gradient(135deg, rgba(37,99,235,0.25), rgba(29,78,216,0.15))",
-                  border: "1px solid rgba(59,130,246,0.3)",
-                  color: "#60a5fa",
-                } : {}}
                 title={collapsed ? item.name : undefined}
               >
-                <item.icon className="h-4 w-4 shrink-0" style={active ? { color: "#60a5fa" } : {}} />
+                <item.icon className={cn("h-4 w-4 shrink-0", active ? "text-blue-600" : "text-slate-400")} />
                 {!collapsed && <span>{item.name}</span>}
               </Link>
             );
@@ -86,29 +84,26 @@ function SuperAdminLayoutInner({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Collapse toggle */}
-        <div className="hidden md:flex p-2 border-t" style={{ borderColor: "rgba(59,130,246,0.15)" }}>
+        <div className="hidden md:flex p-2 border-t border-slate-100">
           <button onClick={() => setCollapsed(!collapsed)}
-            className={cn("flex items-center gap-2 px-3 py-2 rounded-xl text-zinc-500 hover:text-white transition-all w-full text-sm", collapsed && "justify-center")}
-            style={{ background: "rgba(255,255,255,0.03)" }}>
+            className={cn("flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-all w-full text-sm", collapsed && "justify-center")}>
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <><ChevronLeft className="h-4 w-4" /><span>Collapse</span></>}
           </button>
         </div>
 
         {/* User */}
-        <div className={cn("p-3 border-t flex items-center gap-3", collapsed && "justify-center")}
-          style={{ borderColor: "rgba(59,130,246,0.15)" }}>
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-            style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)", boxShadow: "0 0 8px rgba(37,99,235,0.3)" }}>
+        <div className={cn("p-3 border-t border-slate-100 flex items-center gap-3", collapsed && "justify-center")}>
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
             {currentMember?.name.split(" ").map(n => n[0]).join("").slice(0, 2) ?? "SA"}
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-white truncate">{currentMember?.name ?? "Admin"}</div>
-              <div className="text-[10px] truncate" style={{ color: "#60a5fa" }}>{currentRole?.name ?? "—"}</div>
+              <div className="text-xs font-bold text-slate-800 truncate">{currentMember?.name ?? "Admin"}</div>
+              <div className="text-[10px] text-slate-400 truncate">{currentRole?.name ?? "—"}</div>
             </div>
           )}
           {!collapsed && (
-            <button onClick={handleLogout} className="text-zinc-600 hover:text-red-400 transition-colors" title="Logout">
+            <button onClick={handleLogout} className="text-slate-400 hover:text-red-500 transition-colors" title="Logout">
               <LogOut className="h-4 w-4" />
             </button>
           )}
@@ -118,50 +113,45 @@ function SuperAdminLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <div className={cn("flex-1 flex flex-col min-w-0 transition-all duration-300", collapsed ? "md:ml-16" : "md:ml-60")}>
         {/* Topbar */}
-        <header className="h-16 flex items-center justify-between px-4 md:px-6 shrink-0 border-b"
-          style={{ background: "#030f1f", borderColor: "rgba(59,130,246,0.15)" }}>
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
-            <button className="md:hidden p-2 text-zinc-500 hover:text-white" onClick={() => setMobileOpen(!mobileOpen)}>
+            <button className="md:hidden p-2 text-slate-500 hover:text-slate-700" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
             <div className="relative hidden sm:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
-              <input type="text" placeholder="Search..." className="h-9 pl-9 pr-4 rounded-xl text-sm text-white placeholder:text-zinc-600 outline-none w-56 transition-all"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,130,246,0.15)" }}
-                onFocus={e => (e.target.style.borderColor = "rgba(59,130,246,0.5)")}
-                onBlur={e => (e.target.style.borderColor = "rgba(59,130,246,0.15)")} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input type="text" placeholder="Search..."
+                className="h-9 pl-9 pr-4 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 w-56 transition-all" />
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-xs">
-              <Activity className="h-3.5 w-3.5" style={{ color: "#34d399" }} />
-              <span style={{ color: "#34d399" }} className="font-medium">System Online</span>
+              <Activity className="h-3.5 w-3.5 text-green-500" />
+              <span className="text-green-600 font-medium">System Online</span>
             </div>
             {currentRole && (
-              <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                style={{ background: "rgba(37,99,235,0.2)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.3)" }}>
+              <span className="hidden sm:inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-100">
                 {currentRole.name}
               </span>
             )}
-            <button className="relative p-2 text-zinc-500 hover:text-white transition-colors">
+            <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
               <Bell className="h-4 w-4" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full" style={{ background: "#3b82f6" }} />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-blue-500 rounded-full" />
             </button>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-              style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)" }}>
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
               {currentMember?.name.split(" ").map(n => n[0]).join("").slice(0, 2) ?? "SA"}
             </div>
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6" style={{ background: "#020d1a" }}>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
           {children}
         </main>
       </div>
 
       {/* Mobile overlay */}
-      {mobileOpen && <div className="fixed inset-0 z-40 bg-black/70 md:hidden" onClick={() => setMobileOpen(false)} />}
+      {mobileOpen && <div className="fixed inset-0 z-40 bg-black/30 md:hidden" onClick={() => setMobileOpen(false)} />}
     </div>
   );
 }
