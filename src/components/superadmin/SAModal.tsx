@@ -22,11 +22,13 @@ export default function SAModal({ open, onClose, title, children, width = "max-w
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative w-full ${width} bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl`}>
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
+      <div className="absolute inset-0 backdrop-blur-sm" style={{ background: "rgba(2,13,26,0.8)" }} onClick={onClose} />
+      <div className={`relative w-full ${width} rounded-2xl border shadow-2xl`}
+        style={{ background: "#030f1f", borderColor: "rgba(59,130,246,0.2)", boxShadow: "0 0 60px rgba(37,99,235,0.15)" }}>
+        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(59,130,246,0.15)" }}>
           <h2 className="text-base font-bold text-white">{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-zinc-500 hover:text-white transition-all"
+            style={{ background: "rgba(255,255,255,0.05)" }}>
             <X className="h-4 w-4" />
           </button>
         </div>
