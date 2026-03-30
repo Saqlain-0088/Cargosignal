@@ -7,39 +7,179 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { 
-  ArrowLeft, 
-  MapPin, 
-  Calendar, 
-  Package, 
-  Truck, 
-  Ship, 
-  Clock, 
-  CheckCircle2,
-  AlertTriangle,
-  FileText,
-  Anchor,
-  TrendingUp,
-  ArrowRight,
-  Activity,
-  Layers,
-  ShieldCheck,
-  Globe,
-  ThermometerSnowflake
+  ArrowLeft, MapPin, Calendar, Package, Truck, Ship, Clock, CheckCircle2,
+  AlertTriangle, FileText, Anchor, TrendingUp, ArrowRight, Activity,
+  Layers, ShieldCheck, Globe, Navigation, Info, Loader2
 } from "lucide-react";
 import { shipments, containers, alerts, customsEvents } from "@/mock";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { fetchShipmentData, ShipmentData } from "@/lib/trackingService";
+import { motion } from "framer-motion";
 
 export default function ShipmentDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
   const [activeView, setActiveView] = useState<'details' | 'bl'>('details');
+  const [trackedShipment, setTrackedShipment] = useState<ShipmentData | null>(null);
+  const [trackLoading, setTrackLoading] = useState(false);
 
   const shipment = shipments.find(s => s.id === id);
   const shipmentContainers = containers.filter(c => c.shipmentId === id);
   const shipmentAlerts = alerts.filter(a => a.relatedId === id);
   const shipmentEvents = customsEvents.filter(e => e.shipmentId === id);
+
+  // If ID starts with SHP- it came from the tracking flow — load from service
+  useEffect(() => {
+    if (id.startsWith("SHP-") && !shipment) {
+      setTrackLoading(true);
+      const containerId = id.replace("SHP-", "");
+      fetchShipmentData(containerId).then(data => {
+        setTrackedShipment(data);
+        setTrackLoading(false);
+      }).catch(() => setTrackLoading(false));
+    }
+  }, [id, shipment]);
+
+  // Loading state for tracked shipments
+  if (trackLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full border-2 border-blue-500/20 flex items-center justify-center">
+              <Loader2 className="h-7 w-7 text-blue-500 animate-spin" />
+            </div>
+            <div className="absolute inset-0 rounded-full border-2 border-blue-500/30 animate-ping" />
+          </div>
+          <div className="text-center">
+            <div className="font-semibold text-slate-800 mb-1">Loading shipment details...</div>
+            <div className="text-sm text-slate-500">Fetching data for {id}</div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Tracked shipment view (from landing page tracking flow)
+  if (trackedShipment && !shipment) {
+    const statusColors: Record<string, string> = {
+      "In Transit": "#3b82f6", "Customs Hold": "#f59e0b", "Arrived": "#10b981", "Departed": "#8b5cf6", "Booked": "#6b7280",
+    };
+    const color = statusColors[trackedShipment.status] ?? "#3b82f6";
+
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col gap-6 p-base">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <Button variant="secondary" className="h-10 w-10 p-0 border-surface-border" onClick={() => router.push("/dashboard/shipments")}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <div className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-0.5">Tracked Shipment</div>
+              <h1 className="text-2xl font-extrabold text-slate-900 font-mono">{trackedShipment.containerId}</h1>
+            </div>
+            <span className="ml-auto px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
+              style={{ background: color + "20", color, border: `1px solid ${color}40` }}>
+              {trackedShipment.status}
+            </span>
+          </div>
+
+          {/* Key details */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "Vessel", value: trackedShipment.vessel, icon: Ship },
+              { label: "Current Location", value: trackedShipment.currentLocation, icon: Navigation },
+              { label: "Origin", value: trackedShipment.origin, icon: MapPin },
+              { label: "Destination", value: trackedShipment.destination, icon: MapPin },
+            ].map(d => (
+              <Card key={d.label} className="border-surface-border shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <d.icon className="h-3.5 w-3.5 text-slate-400" />
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">{d.label}</div>
+                  </div>
+                  <div className="font-semibold text-slate-800 text-sm leading-tight">{d.value}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Progress */}
+          <Card className="border-surface-border shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-slate-400" />
+                  <span className="font-semibold text-slate-800">Journey Progress</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Estimated Arrival</div>
+                  <div className="font-bold text-sm" style={{ color }}>{trackedShipment.eta}</div>
+                </div>
+              </div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <motion.div className="h-full rounded-full"
+                  initial={{ width: 0 }} animate={{ width: `${trackedShipment.progress}%` }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  style={{ background: `linear-gradient(90deg, ${color}, ${color}cc)` }} />
+              </div>
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>{trackedShipment.origin}</span>
+                <span className="font-semibold" style={{ color }}>{trackedShipment.progress}% complete</span>
+                <span>{trackedShipment.destination}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Timeline */}
+          <Card className="border-surface-border shadow-sm">
+            <CardHeader className="border-b border-surface-border bg-slate-50/50">
+              <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-blue-500" /> Tracking History
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="relative space-y-6 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-slate-100 before:content-['']">
+                {trackedShipment.timeline.map((step, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
+                    className="relative flex items-start gap-6 z-10">
+                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center border-2 shrink-0 bg-white",
+                      step.done ? "border-blue-500 bg-blue-500" : step.active ? "border-blue-400" : "border-slate-200")}>
+                      {step.done ? <CheckCircle2 className="h-4 w-4 text-white" />
+                        : step.active ? <div className="w-2.5 h-2.5 bg-blue-400 rounded-full animate-pulse" />
+                        : <div className="w-2 h-2 bg-slate-200 rounded-full" />}
+                    </div>
+                    <div className="flex-1 pt-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={cn("font-semibold text-sm", step.active ? "text-blue-600" : step.done ? "text-slate-800" : "text-slate-400")}>
+                          {step.status}
+                        </span>
+                        <span className="text-xs text-slate-400">{step.date} · {step.time}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
+                        <MapPin className="h-3 w-3" />{step.location}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              {/* AI note */}
+              <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-blue-100 bg-blue-50 mt-6">
+                <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-slate-600">
+                  <span className="font-semibold text-slate-800">AI Prediction: </span>
+                  Based on current vessel speed and weather patterns, estimated arrival is on track. No significant delays expected.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!shipment) {
     return (

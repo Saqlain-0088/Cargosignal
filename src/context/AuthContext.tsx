@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getPendingTracking, clearPendingTracking, fetchShipmentData, saveShipmentToUser } from "@/lib/trackingService";
 
 export type AuthProvider = "email" | "google" | "magic_link";
 
@@ -41,20 +42,29 @@ function saveUser(user: User) {
   localStorage.setItem("cargosignal_user", JSON.stringify(user));
 }
 
-function getPendingTrack() {
-  return typeof window !== "undefined" ? sessionStorage.getItem("pending_track") : null;
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(getInitialUser);
   const [isLoading] = useState(false);
   const router = useRouter();
 
-  const afterAuth = (u: User) => {
+  // Shared post-auth redirect logic
+  const afterAuth = async (u: User) => {
     saveUser(u);
     setUser(u);
-    const pending = getPendingTrack();
-    router.push(pending ? "/tracking" : "/dashboard");
+
+    const pending = getPendingTracking();
+    if (pending) {
+      clearPendingTracking();
+      try {
+        const shipment = await fetchShipmentData(pending);
+        const shipmentId = await saveShipmentToUser(shipment, u.id);
+        router.push(`/dashboard/shipments/${shipmentId}`);
+      } catch {
+        router.push("/dashboard");
+      }
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   // ── Email + Password ──────────────────────────────────────────────────────
@@ -66,10 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (name: string, email: string, _password?: string) => {
     const u: User = { id: `u-${Date.now()}`, email, name, provider: "email" };
-    saveUser(u);
-    setUser(u);
-    const pending = getPendingTrack();
-    router.push(pending ? "/tracking" : "/onboarding");
+    await afterAuth(u);
   };
 
   // ── Google OAuth (mock — real impl needs NextAuth/Supabase) ───────────────

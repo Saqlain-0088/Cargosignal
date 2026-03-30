@@ -6,9 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { storePendingTrack } from "@/lib/trackingGuard";
+import { setPendingTracking } from "@/lib/trackingService";
 import InlineTrackingResult, { getMockTrackingData, TrackingResult } from "./InlineTrackingResult";
-
 const TacticalWorldMap = dynamic(() => import("./TacticalWorldMap"), {
   ssr: false,
   loading: () => <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, #020d1a 0%, #030f1f 100%)" }} />,
@@ -35,9 +34,9 @@ export default function HeroMapSection() {
     if (loading) return;
     setError("");
 
-    // Auth gate — unauthenticated users go to register
+    // Auth gate — store container number and redirect to register with message
     if (!isAuthenticated) {
-      storePendingTrack(containerNumber.trim());
+      setPendingTracking(containerNumber.trim());
       router.push("/register");
       return;
     }

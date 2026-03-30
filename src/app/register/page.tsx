@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/Toast";
-import { Globe, Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2, AlertCircle, Star } from "lucide-react";
+import { Globe, Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2, AlertCircle, Star, Package } from "lucide-react";
 import Link from "next/link";
 import { validateForm, validators } from "@/lib/validation";
 import SocialAuthButtons from "@/components/ui/SocialAuthButtons";
+import { getPendingTracking } from "@/lib/trackingService";
 
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
@@ -27,7 +28,12 @@ export default function RegisterPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pendingContainer, setPendingContainer] = useState<string | null>(null);
   const { register } = useAuth();
+
+  useEffect(() => {
+    setPendingContainer(getPendingTracking());
+  }, []);
   const { success, error } = useToast();
 
   const rules = {
@@ -89,6 +95,21 @@ export default function RegisterPage() {
             <span className="text-lg font-extrabold text-white">CargoSignal</span>
           </div>
           <div className="mb-7">
+            {/* Pending tracking banner */}
+            {pendingContainer && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-3 px-4 py-3 rounded-xl border border-blue-500/30 bg-blue-500/8 mb-6">
+                <Package className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-sm font-semibold text-white mb-0.5">
+                    Create an account to view full shipment details
+                  </div>
+                  <div className="text-xs text-zinc-400">
+                    Tracking <span className="font-mono text-blue-300">{pendingContainer}</span> — results will appear in your dashboard after sign up.
+                  </div>
+                </div>
+              </motion.div>
+            )}
             <h1 className="text-2xl font-black text-white mb-1.5">Start your free trial</h1>
             <p className="text-zinc-500 text-sm">No credit card required · Setup in 5 minutes</p>
           </div>
