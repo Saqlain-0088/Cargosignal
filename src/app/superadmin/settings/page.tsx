@@ -3,8 +3,8 @@ import { useState } from "react";
 import { Settings, Save, Eye, EyeOff, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 
-const SA_STYLE = { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(59,130,246,0.12)" };
-const inputStyle = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,130,246,0.2)" };
+const inputCls = "w-full h-10 px-3 rounded-lg text-sm text-slate-800 bg-white border border-slate-300 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all";
+const errInputCls = "w-full h-10 px-3 rounded-lg text-sm text-slate-800 bg-white border border-red-400 outline-none focus:ring-2 focus:ring-red-100 transition-all";
 
 const toggleLabels: Record<string, { label: string; desc: string }> = {
   maintenanceMode: { label: "Maintenance Mode", desc: "Temporarily disable platform access for all users" },
@@ -37,8 +37,16 @@ export default function SettingsPage() {
   };
 
   const handleSave = () => {
-    if (!systemName.trim()) { setSystemNameError("System name is required"); error("Validation failed", "Please fix the highlighted fields."); return; }
-    if (systemName.trim().length < 3) { setSystemNameError("System name must be at least 3 characters"); error("Validation failed", "System name is too short."); return; }
+    if (!systemName.trim()) {
+      setSystemNameError("System name is required");
+      error("Validation failed", "Please fix the highlighted fields.");
+      return;
+    }
+    if (systemName.trim().length < 3) {
+      setSystemNameError("System name must be at least 3 characters");
+      error("Validation failed", "System name is too short.");
+      return;
+    }
     setSystemNameError("");
     setSaved(true);
     success("Settings saved!", "Your platform settings have been updated successfully.");
@@ -54,66 +62,82 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center gap-3">
-        <Settings className="h-6 w-6" style={{ color: "#60a5fa" }} />
+        <Settings className="h-6 w-6 text-blue-600" />
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Settings</h1>
-          <p className="text-sm" style={{ color: "#64748b" }}>Platform configuration and feature toggles.</p>
+          <h1 className="text-2xl font-extrabold text-slate-800">Settings</h1>
+          <p className="text-sm text-slate-500">Platform configuration and feature toggles.</p>
         </div>
       </div>
 
       {/* General */}
-      <div className="rounded-xl border p-6 space-y-5" style={SA_STYLE}>
-        <h2 className="text-sm font-bold text-white border-b pb-3" style={{ borderColor: "rgba(59,130,246,0.15)" }}>General</h2>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
+        <h2 className="text-sm font-bold text-slate-700 border-b border-slate-100 pb-3">General</h2>
         <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: "#94a3b8" }}>System Name *</label>
-          <input value={systemName} onChange={e => { setSystemName(e.target.value); setSystemNameError(""); }}
-            className="w-full h-10 px-3 rounded-xl text-sm text-white outline-none transition-all"
-            style={{ ...inputStyle, ...(systemNameError ? { border: "1px solid #f87171" } : {}) }} />
-          {systemNameError && <p className="flex items-center gap-1 text-xs text-red-400 mt-1"><AlertCircle className="h-3 w-3" />{systemNameError}</p>}
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">System Name *</label>
+          <input
+            value={systemName}
+            onChange={e => { setSystemName(e.target.value); setSystemNameError(""); }}
+            className={systemNameError ? errInputCls : inputCls}
+            placeholder="e.g. CargoSignal Platform"
+          />
+          {systemNameError && (
+            <p className="flex items-center gap-1 text-xs text-red-500 mt-1">
+              <AlertCircle className="h-3 w-3" />{systemNameError}
+            </p>
+          )}
         </div>
         <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: "#94a3b8" }}>Platform API Key</label>
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">Platform API Key</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <input type={showKey ? "text" : "password"} value={apiKey} readOnly
-                className="w-full h-10 px-3 pr-10 rounded-xl text-sm text-white font-mono outline-none"
-                style={inputStyle} />
-              <button onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                style={{ color: "#64748b" }}>
+              <input
+                type={showKey ? "text" : "password"}
+                value={apiKey}
+                readOnly
+                className="w-full h-10 px-3 pr-10 rounded-lg text-sm text-slate-800 font-mono bg-slate-50 border border-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setShowKey(!showKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
                 {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <button onClick={regenerateKey} className="flex items-center gap-1.5 h-10 px-3 rounded-xl text-xs font-medium transition-all"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(59,130,246,0.2)", color: "#94a3b8" }}>
+            <button
+              onClick={regenerateKey}
+              className="flex items-center gap-1.5 h-10 px-3 rounded-lg text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
+            >
               <RefreshCw className="h-3.5 w-3.5" /> Regenerate
             </button>
           </div>
-          <p className="text-xs mt-1.5" style={{ color: "#475569" }}>Keep this key secret. Regenerating will invalidate the current key.</p>
+          <p className="text-xs text-slate-400 mt-1.5">Keep this key secret. Regenerating will invalidate the current key.</p>
         </div>
       </div>
 
       {/* Feature Toggles */}
-      <div className="rounded-xl border p-6 space-y-4" style={SA_STYLE}>
-        <h2 className="text-sm font-bold text-white border-b pb-3" style={{ borderColor: "rgba(59,130,246,0.15)" }}>Feature Toggles</h2>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-1">
+        <h2 className="text-sm font-bold text-slate-700 border-b border-slate-100 pb-3 mb-3">Feature Toggles</h2>
         {(Object.keys(toggles) as (keyof typeof toggles)[]).map(key => (
-          <div key={key} className="flex items-center justify-between py-2">
+          <div key={key} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
             <div>
-              <div className="text-sm font-medium text-white">{toggleLabels[key].label}</div>
-              <div className="text-xs mt-0.5" style={{ color: "#64748b" }}>{toggleLabels[key].desc}</div>
+              <div className="text-sm font-medium text-slate-800">{toggleLabels[key].label}</div>
+              <div className="text-xs text-slate-400 mt-0.5">{toggleLabels[key].desc}</div>
             </div>
-            <button onClick={() => toggle(key)}
-              className="w-11 h-6 rounded-full transition-colors relative shrink-0"
-              style={{ background: toggles[key] ? "#2563eb" : "rgba(255,255,255,0.1)" }}>
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${toggles[key] ? "translate-x-6" : "translate-x-1"}`} />
+            <button
+              onClick={() => toggle(key)}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${toggles[key] ? "bg-blue-600" : "bg-slate-200"}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${toggles[key] ? "translate-x-6" : "translate-x-1"}`} />
             </button>
           </div>
         ))}
       </div>
 
       <div className="flex justify-end">
-        <button onClick={handleSave}
-          className="flex items-center gap-2 h-10 px-6 rounded-xl text-sm font-semibold text-white transition-all"
-          style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)", boxShadow: "0 4px 16px rgba(37,99,235,0.3)" }}>
+        <button
+          onClick={handleSave}
+          className="flex items-center gap-2 h-10 px-6 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+        >
           {saved ? <><CheckCircle2 className="h-4 w-4" /> Saved!</> : <><Save className="h-4 w-4" /> Save Settings</>}
         </button>
       </div>

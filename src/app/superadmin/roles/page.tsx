@@ -17,12 +17,13 @@ const ALL_PERMISSIONS: { key: Permission; label: string; desc: string }[] = [
 ];
 
 const COLORS = ["#3b82f6", "#06b6d4", "#10b981", "#8b5cf6", "#ec4899", "#f59e0b"];
-const SA_STYLE = { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(59,130,246,0.12)" };
-const inputStyle = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,130,246,0.2)" };
+
+const inputCls = "w-full h-10 px-3 rounded-lg text-sm text-slate-800 bg-white border border-slate-300 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all";
+const errInputCls = "w-full h-10 px-3 rounded-lg text-sm text-slate-800 bg-white border border-red-400 outline-none focus:ring-2 focus:ring-red-100 transition-all";
 
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
-  return <p className="flex items-center gap-1 text-xs text-red-400 mt-1"><AlertCircle className="h-3 w-3" />{msg}</p>;
+  return <p className="flex items-center gap-1 text-xs text-red-500 mt-1"><AlertCircle className="h-3 w-3" />{msg}</p>;
 }
 
 export default function RolesPage() {
@@ -79,34 +80,39 @@ export default function RolesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Roles & Permissions</h1>
-          <p className="text-sm mt-1" style={{ color: "#64748b" }}>Define roles and control access to admin panel modules.</p>
+          <h1 className="text-2xl font-extrabold text-slate-800">Roles & Permissions</h1>
+          <p className="text-sm text-slate-500 mt-1">Define roles and control access to admin panel modules.</p>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold text-white transition-all"
-          style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)", boxShadow: "0 4px 16px rgba(37,99,235,0.3)" }}>
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+        >
           <Plus className="h-4 w-4" /> Create Role
         </button>
       </div>
 
+      {/* Role Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {roles.map(role => (
-          <div key={role.id} className="rounded-xl border p-5 hover:border-blue-500/30 transition-all" style={SA_STYLE}>
+          <div key={role.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:border-blue-300 hover:shadow-md transition-all">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: role.color + "20" }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: role.color + "18" }}>
                   <Shield className="h-4 w-4" style={{ color: role.color }} />
                 </div>
                 <div>
-                  <div className="font-bold text-white">{role.name}</div>
-                  <div className="text-xs" style={{ color: "#64748b" }}>{memberCount(role.id)} member{memberCount(role.id) !== 1 ? "s" : ""}</div>
+                  <div className="font-bold text-slate-800">{role.name}</div>
+                  <div className="text-xs text-slate-400">{memberCount(role.id)} member{memberCount(role.id) !== 1 ? "s" : ""}</div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => openEdit(role)} className="p-1.5 rounded-lg text-zinc-500 hover:text-white transition-all"
-                  style={{ background: "rgba(255,255,255,0.04)" }}><Edit2 className="h-3.5 w-3.5" /></button>
+                <button onClick={() => openEdit(role)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                  <Edit2 className="h-3.5 w-3.5" />
+                </button>
                 {role.id !== "superadmin" && (
-                  <button onClick={() => setDeleteId(role.id)} className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 transition-all"
-                    style={{ background: "rgba(255,255,255,0.04)" }}><Trash2 className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => setDeleteId(role.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 )}
               </div>
             </div>
@@ -114,11 +120,14 @@ export default function RolesPage() {
               {ALL_PERMISSIONS.map(p => {
                 const has = role.permissions.includes(p.key);
                 return (
-                  <span key={p.key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                  <span
+                    key={p.key}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
                     style={has
-                      ? { background: "rgba(255,255,255,0.08)", color: "#cbd5e1" }
-                      : { background: "rgba(255,255,255,0.03)", color: "#475569", textDecoration: "line-through" }}>
-                    {has && <Check className="h-2.5 w-2.5" style={{ color: role.color }} />}
+                      ? { background: role.color + "15", color: role.color }
+                      : { background: "#f1f5f9", color: "#94a3b8", textDecoration: "line-through" }}
+                  >
+                    {has && <Check className="h-2.5 w-2.5" />}
                     {p.label}
                   </span>
                 );
@@ -129,37 +138,35 @@ export default function RolesPage() {
       </div>
 
       {/* Permissions Matrix */}
-      <div className="rounded-xl border overflow-hidden" style={SA_STYLE}>
-        <div className="p-5 border-b" style={{ borderColor: "rgba(59,130,246,0.12)" }}>
-          <h2 className="font-bold text-white text-sm">Permissions Matrix</h2>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-slate-100">
+          <h2 className="font-bold text-slate-700 text-sm">Permissions Matrix</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: "1px solid rgba(59,130,246,0.12)" }}>
-                <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#475569" }}>Module</th>
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Module</th>
                 {roles.map(r => (
                   <th key={r.id} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-center" style={{ color: r.color }}>{r.name}</th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-50">
               {ALL_PERMISSIONS.map(p => (
-                <tr key={p.key} className="transition-colors" style={{ borderBottom: "1px solid rgba(59,130,246,0.06)" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(59,130,246,0.04)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                <tr key={p.key} className="hover:bg-slate-50 transition-colors">
                   <td className="px-5 py-3">
-                    <div className="font-medium text-white text-sm">{p.label}</div>
-                    <div className="text-xs" style={{ color: "#64748b" }}>{p.desc}</div>
+                    <div className="font-medium text-slate-800 text-sm">{p.label}</div>
+                    <div className="text-xs text-slate-400">{p.desc}</div>
                   </td>
                   {roles.map(r => (
                     <td key={r.id} className="px-4 py-3 text-center">
                       {r.permissions.includes(p.key)
-                        ? <div className="w-5 h-5 rounded-full mx-auto flex items-center justify-center" style={{ background: r.color + "20" }}>
+                        ? <div className="w-5 h-5 rounded-full mx-auto flex items-center justify-center" style={{ background: r.color + "18" }}>
                             <Check className="h-3 w-3" style={{ color: r.color }} />
                           </div>
-                        : <div className="w-5 h-5 rounded-full mx-auto flex items-center justify-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-                            <span style={{ color: "#475569", fontSize: 10 }}>—</span>
+                        : <div className="w-5 h-5 rounded-full mx-auto flex items-center justify-center bg-slate-100">
+                            <span className="text-slate-300 text-[10px]">—</span>
                           </div>}
                     </td>
                   ))}
@@ -175,65 +182,70 @@ export default function RolesPage() {
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#94a3b8" }}>Role Name *</label>
-              <input value={form.name} onChange={e => { setForm(f => ({ ...f, name: e.target.value })); if (formErrors.name) setFormErrors(e2 => ({ ...e2, name: "" })); }}
-                className="w-full h-10 px-3 rounded-xl text-sm text-white outline-none"
-                style={{ ...inputStyle, ...(formErrors.name ? { border: "1px solid #f87171" } : {}) }} placeholder="e.g. Manager" />
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Role Name *</label>
+              <input
+                value={form.name}
+                onChange={e => { setForm(f => ({ ...f, name: e.target.value })); if (formErrors.name) setFormErrors(e2 => ({ ...e2, name: "" })); }}
+                className={formErrors.name ? errInputCls : inputCls}
+                placeholder="e.g. Manager"
+              />
               <FieldError msg={formErrors.name} />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#94a3b8" }}>Color</label>
-              <div className="flex gap-2 flex-wrap">
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Color</label>
+              <div className="flex gap-2 flex-wrap mt-1">
                 {COLORS.map(c => (
-                  <button key={c} onClick={() => setForm(f => ({ ...f, color: c }))}
+                  <button
+                    key={c}
+                    onClick={() => setForm(f => ({ ...f, color: c }))}
                     className="w-7 h-7 rounded-full transition-all"
-                    style={{ backgroundColor: c, ...(form.color === c ? { outline: "2px solid white", outlineOffset: 2 } : {}) }} />
+                    style={{ backgroundColor: c, ...(form.color === c ? { outline: "2px solid #1e40af", outlineOffset: 2 } : {}) }}
+                  />
                 ))}
               </div>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium mb-3" style={{ color: "#94a3b8" }}>Permissions *</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-2">Permissions *</label>
             <FieldError msg={formErrors.permissions} />
             <div className="space-y-2 mt-2">
               {ALL_PERMISSIONS.map(p => (
-                <label key={p.key} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(59,130,246,0.1)" }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(59,130,246,0.25)")}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(59,130,246,0.1)")}>
-                  <div onClick={() => togglePerm(p.key)}
-                    className="w-5 h-5 rounded flex items-center justify-center shrink-0 cursor-pointer transition-all"
+                <label
+                  key={p.key}
+                  onClick={() => togglePerm(p.key)}
+                  className="flex items-center gap-3 p-3 rounded-xl cursor-pointer border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all"
+                >
+                  <div
+                    className="w-5 h-5 rounded flex items-center justify-center shrink-0 transition-all"
                     style={form.permissions.includes(p.key)
                       ? { background: form.color }
-                      : { border: "1px solid rgba(255,255,255,0.2)", background: "transparent" }}>
+                      : { border: "1.5px solid #cbd5e1", background: "white" }}
+                  >
                     {form.permissions.includes(p.key) && <Check className="h-3 w-3 text-white" />}
                   </div>
-                  <div className="flex-1" onClick={() => togglePerm(p.key)}>
-                    <div className="text-sm font-medium text-white">{p.label}</div>
-                    <div className="text-xs" style={{ color: "#64748b" }}>{p.desc}</div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-slate-800">{p.label}</div>
+                    <div className="text-xs text-slate-400">{p.desc}</div>
                   </div>
                 </label>
               ))}
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-2 border-t" style={{ borderColor: "rgba(59,130,246,0.15)" }}>
-            <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-400 border"
-              style={{ borderColor: "rgba(59,130,246,0.2)", background: "rgba(255,255,255,0.03)" }}>Cancel</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)" }}>
+          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+            <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Cancel</button>
+            <button onClick={handleSave} className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
               {editing ? "Save Changes" : "Create Role"}
             </button>
           </div>
         </div>
       </SAModal>
 
+      {/* Delete Confirm Modal */}
       <SAModal open={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Role" width="max-w-sm">
-        <p className="text-sm mb-5" style={{ color: "#94a3b8" }}>Deleting this role will affect all members assigned to it. This cannot be undone.</p>
+        <p className="text-sm text-slate-600 mb-5">Deleting this role will affect all members assigned to it. This action cannot be undone.</p>
         <div className="flex justify-end gap-3">
-          <button onClick={() => setDeleteId(null)} className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-400 border"
-            style={{ borderColor: "rgba(59,130,246,0.2)", background: "rgba(255,255,255,0.03)" }}>Cancel</button>
-          <button onClick={() => deleteId && handleDelete(deleteId)} className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #dc2626, #b91c1c)" }}>Delete</button>
+          <button onClick={() => setDeleteId(null)} className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Cancel</button>
+          <button onClick={() => deleteId && handleDelete(deleteId)} className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors">Delete</button>
         </div>
       </SAModal>
     </div>
