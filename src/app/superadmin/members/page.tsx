@@ -6,12 +6,13 @@ import SAModal from "@/components/superadmin/SAModal";
 import StatCard from "@/components/superadmin/StatCard";
 import { useToast } from "@/components/ui/Toast";
 
-const SA_STYLE = { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(59,130,246,0.12)" };
-const inputStyle = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,130,246,0.2)" };
+const inputCls = "w-full h-10 px-3 rounded-lg text-sm text-slate-800 bg-white border border-slate-300 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all";
+const errInputCls = "w-full h-10 px-3 rounded-lg text-sm text-slate-800 bg-white border border-red-400 outline-none focus:ring-2 focus:ring-red-100 transition-all";
+const selectCls = "w-full h-10 px-3 rounded-lg text-sm text-slate-800 bg-white border border-slate-300 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all";
 
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
-  return <p className="flex items-center gap-1 text-xs text-red-400 mt-1"><AlertCircle className="h-3 w-3" />{msg}</p>;
+  return <p className="flex items-center gap-1 text-xs text-red-500 mt-1"><AlertCircle className="h-3 w-3" />{msg}</p>;
 }
 
 export default function MembersPage() {
@@ -44,7 +45,7 @@ export default function MembersPage() {
       success("Member updated!", `${form.name}'s details have been updated.`);
     } else {
       setMembers([...members, { ...form, id: Date.now().toString(), joinedAt: new Date().toISOString().split("T")[0] }]);
-      success("Member added!", `${form.name} has been added to the panel.`);
+      success("Member added!", `${form.name} has been added.`);
     }
     setModalOpen(false);
   };
@@ -52,89 +53,43 @@ export default function MembersPage() {
   const toggleStatus = (id: string) => {
     const member = members.find(m => m.id === id);
     setMembers(members.map(m => m.id === id ? { ...m, status: m.status === "active" ? "inactive" : "active" } : m));
-    if (member) {
-      member.status === "active"
-        ? warning("Member deactivated", `${member.name} has been deactivated.`)
-        : success("Member activated", `${member.name} is now active.`);
-    }
+    if (member) member.status === "active" ? warning("Member deactivated", `${member.name} has been deactivated.`) : success("Member activated", `${member.name} is now active.`);
   };
 
-  const setField = (field: string, value: string) => {
-    setForm(f => ({ ...f, [field]: value }));
-    if (formErrors[field]) setFormErrors(e => ({ ...e, [field]: "" }));
-  };
+  const setField = (field: string, value: string) => { setForm(f => ({ ...f, [field]: value })); if (formErrors[field]) setFormErrors(e => ({ ...e, [field]: "" })); };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Members</h1>
-          <p className="text-sm mt-1" style={{ color: "#64748b" }}>Manage admin panel members and their roles.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Members</h1>
+          <p className="text-slate-500 mt-1 font-medium">Manage admin panel members and their roles.</p>
         </div>
-        {canManage && (
-          <button onClick={openCreate} className="flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold text-white transition-all"
-            style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)", boxShadow: "0 4px 16px rgba(37,99,235,0.3)" }}>
-            <Plus className="h-4 w-4" /> Add Member
-          </button>
-        )}
+        {canManage && <button onClick={openCreate} className="flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"><Plus className="h-4 w-4" /> Add Member</button>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard title="Total Members" value={members.length} icon={Users} color="#3b82f6" />
-        <StatCard title="Active" value={members.filter(m => m.status === "active").length} icon={UserCheck} trendUp color="#34d399" />
-        <StatCard title="Roles Defined" value={roles.length} icon={Shield} color="#60a5fa" />
+        <StatCard title="Total Members" value={members.length} icon={Users} color="#2563eb" />
+        <StatCard title="Active" value={members.filter(m => m.status === "active").length} icon={UserCheck} trendUp color="#10b981" />
+        <StatCard title="Roles Defined" value={roles.length} icon={Shield} color="#2563eb" />
       </div>
-      <div className="rounded-xl border overflow-hidden" style={SA_STYLE}>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: "1px solid rgba(59,130,246,0.12)" }}>
-                {["Member", "Email", "Role", "Status", "Joined", "Actions"].map(h => (
-                  <th key={h} className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#475569" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
+            <thead className="bg-slate-50"><tr>{["Member", "Email", "Role", "Status", "Joined", "Actions"].map(h => <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>)}</tr></thead>
+            <tbody className="divide-y divide-slate-50">
               {members.map(member => {
                 const role = roles.find(r => r.id === member.roleId);
                 return (
-                  <tr key={member.id} className="transition-colors" style={{ borderBottom: "1px solid rgba(59,130,246,0.06)" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(59,130,246,0.04)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                          style={{ background: role?.color ? role.color + "30" : "rgba(37,99,235,0.2)", border: `1px solid ${role?.color ?? "#3b82f6"}40` }}>
-                          {member.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                        </div>
-                        <span className="font-medium text-white">{member.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3" style={{ color: "#94a3b8" }}>{member.email}</td>
-                    <td className="px-5 py-3">
-                      {role && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                        style={{ background: role.color + "20", color: role.color }}>{role.name}</span>}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                        style={member.status === "active"
-                          ? { background: "rgba(52,211,153,0.12)", color: "#34d399" }
-                          : { background: "rgba(100,116,139,0.12)", color: "#94a3b8" }}>
-                        {member.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-xs" style={{ color: "#64748b" }}>{member.joinedAt}</td>
-                    <td className="px-5 py-3">
-                      {canManage && (
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => openEdit(member)} className="p-1.5 rounded-lg text-zinc-500 hover:text-white transition-all"
-                            style={{ background: "rgba(255,255,255,0.04)" }}><Edit2 className="h-4 w-4" /></button>
-                          <button onClick={() => toggleStatus(member.id)} className="p-1.5 rounded-lg text-zinc-500 transition-all"
-                            style={{ background: "rgba(255,255,255,0.04)" }}>
-                            {member.status === "active" ? <UserX className="h-4 w-4 hover:text-red-400" /> : <UserCheck className="h-4 w-4 hover:text-green-400" />}
-                          </button>
-                        </div>
-                      )}
-                    </td>
+                  <tr key={member.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-5 py-3"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-xs font-bold text-blue-700 shrink-0">{member.name.split(" ").map(n => n[0]).join("").slice(0, 2)}</div><span className="font-medium text-slate-800">{member.name}</span></div></td>
+                    <td className="px-5 py-3 text-slate-500">{member.email}</td>
+                    <td className="px-5 py-3">{role && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style={{ background: role.color + "15", color: role.color }}>{role.name}</span>}</td>
+                    <td className="px-5 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${member.status === "active" ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500"}`}>{member.status}</span></td>
+                    <td className="px-5 py-3 text-xs text-slate-400">{member.joinedAt}</td>
+                    <td className="px-5 py-3">{canManage && <div className="flex items-center gap-2">
+                      <button onClick={() => openEdit(member)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><Edit2 className="h-4 w-4" /></button>
+                      <button onClick={() => toggleStatus(member.id)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-all">{member.status === "active" ? <UserX className="h-4 w-4 hover:text-red-500" /> : <UserCheck className="h-4 w-4 hover:text-green-600" />}</button>
+                    </div>}</td>
                   </tr>
                 );
               })}
@@ -145,43 +100,24 @@ export default function MembersPage() {
 
       <SAModal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Edit Member" : "Add Member"} width="max-w-md">
         <div className="space-y-4">
+          <div><label className="block text-xs font-semibold text-slate-600 mb-1.5">Full Name *</label><input value={form.name} onChange={e => setField("name", e.target.value)} className={formErrors.name ? errInputCls : inputCls} placeholder="John Doe" /><FieldError msg={formErrors.name} /></div>
+          <div><label className="block text-xs font-semibold text-slate-600 mb-1.5">Email *</label><input type="email" value={form.email} onChange={e => setField("email", e.target.value)} className={formErrors.email ? errInputCls : inputCls} placeholder="john@cargosignal.com" /><FieldError msg={formErrors.email} /></div>
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#94a3b8" }}>Full Name *</label>
-            <input value={form.name} onChange={e => setField("name", e.target.value)}
-              className="w-full h-10 px-3 rounded-xl text-sm text-white outline-none"
-              style={{ ...inputStyle, ...(formErrors.name ? { border: "1px solid #f87171" } : {}) }} placeholder="John Doe" />
-            <FieldError msg={formErrors.name} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#94a3b8" }}>Email *</label>
-            <input type="email" value={form.email} onChange={e => setField("email", e.target.value)}
-              className="w-full h-10 px-3 rounded-xl text-sm text-white outline-none"
-              style={{ ...inputStyle, ...(formErrors.email ? { border: "1px solid #f87171" } : {}) }} placeholder="john@cargosignal.com" />
-            <FieldError msg={formErrors.email} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#94a3b8" }}>Role</label>
-            <select value={form.roleId} onChange={e => setField("roleId", e.target.value)}
-              className="w-full h-10 px-3 rounded-xl text-sm text-white outline-none"
-              style={inputStyle}>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Role</label>
+            {/* Native select with explicit light styling — fixes white dropdown issue */}
+            <select value={form.roleId} onChange={e => setField("roleId", e.target.value)} className={selectCls} style={{ colorScheme: "light" }}>
               {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-3">
-            <label className="text-xs font-medium" style={{ color: "#94a3b8" }}>Active</label>
-            <button onClick={() => setForm(f => ({ ...f, status: f.status === "active" ? "inactive" : "active" }))}
-              className="w-10 h-5 rounded-full transition-colors relative"
-              style={{ background: form.status === "active" ? "#2563eb" : "rgba(255,255,255,0.1)" }}>
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${form.status === "active" ? "translate-x-5" : "translate-x-0.5"}`} />
+            <label className="text-xs font-semibold text-slate-600">Active</label>
+            <button onClick={() => setForm(f => ({ ...f, status: f.status === "active" ? "inactive" : "active" }))} className={`w-10 h-5 rounded-full transition-colors relative ${form.status === "active" ? "bg-blue-600" : "bg-slate-200"}`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${form.status === "active" ? "translate-x-5" : "translate-x-0.5"}`} />
             </button>
           </div>
-          <div className="flex justify-end gap-3 pt-2 border-t" style={{ borderColor: "rgba(59,130,246,0.15)" }}>
-            <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-400 border"
-              style={{ borderColor: "rgba(59,130,246,0.2)", background: "rgba(255,255,255,0.03)" }}>Cancel</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)" }}>
-              {editing ? "Save Changes" : "Add Member"}
-            </button>
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Cancel</button>
+            <button onClick={handleSave} className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">{editing ? "Save Changes" : "Add Member"}</button>
           </div>
         </div>
       </SAModal>

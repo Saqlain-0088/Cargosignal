@@ -15,16 +15,12 @@ const allLogs = [
   { id: "10", event: "Login Failed", user: "unknown@hacker.io", timestamp: "2026-03-25 17:45:01", type: "auth" },
 ];
 
-const typeColors: Record<string, { bg: string; color: string }> = {
-  auth: { bg: "rgba(59,130,246,0.12)", color: "#60a5fa" },
-  billing: { bg: "rgba(96,165,250,0.12)", color: "#93c5fd" },
-  admin: { bg: "rgba(139,92,246,0.12)", color: "#a78bfa" },
-  system: { bg: "rgba(100,116,139,0.12)", color: "#94a3b8" },
-  shipment: { bg: "rgba(52,211,153,0.12)", color: "#34d399" },
+const typeBadge: Record<string, string> = {
+  auth: "bg-blue-50 text-blue-700", billing: "bg-indigo-50 text-indigo-700",
+  admin: "bg-purple-50 text-purple-700", system: "bg-slate-100 text-slate-600", shipment: "bg-green-50 text-green-700",
 };
 
 const eventTypes = ["All", "auth", "billing", "admin", "system", "shipment"];
-const SA_STYLE = { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(59,130,246,0.12)" };
 
 export default function LogsPage() {
   const [typeFilter, setTypeFilter] = useState("All");
@@ -39,62 +35,39 @@ export default function LogsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <ScrollText className="h-6 w-6" style={{ color: "#60a5fa" }} />
+        <ScrollText className="h-6 w-6 text-blue-600" />
         <div>
-          <h1 className="text-2xl font-extrabold text-white">System Logs</h1>
-          <p className="text-sm" style={{ color: "#64748b" }}>Audit trail of all platform events.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">System Logs</h1>
+          <p className="text-slate-500 mt-1 font-medium">Audit trail of all platform events.</p>
         </div>
       </div>
-
       <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4" style={{ color: "#64748b" }} />
-          <span className="text-xs font-medium" style={{ color: "#64748b" }}>Event Type:</span>
-        </div>
+        <div className="flex items-center gap-2"><Filter className="h-4 w-4 text-slate-400" /><span className="text-xs font-medium text-slate-500">Event Type:</span></div>
         {eventTypes.map(t => (
           <button key={t} onClick={() => setTypeFilter(t)}
-            className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={typeFilter === t
-              ? { background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "white" }
-              : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,130,246,0.15)", color: "#94a3b8" }}>
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${typeFilter === t ? "bg-blue-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
         <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)}
-          className="h-8 px-3 rounded-xl text-xs text-white outline-none"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,130,246,0.15)" }} />
-        {dateFilter && <button onClick={() => setDateFilter("")} className="text-xs transition-colors" style={{ color: "#64748b" }}>Clear</button>}
+          className="h-8 px-3 rounded-xl text-xs text-slate-700 bg-white border border-slate-200 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+          style={{ colorScheme: "light" }} />
+        {dateFilter && <button onClick={() => setDateFilter("")} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">Clear</button>}
       </div>
-
-      <div className="rounded-xl border overflow-hidden" style={SA_STYLE}>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: "1px solid rgba(59,130,246,0.12)" }}>
-                {["Event", "User", "Timestamp", "Type"].map(h => (
-                  <th key={h} className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#475569" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
+            <thead className="bg-slate-50"><tr>{["Event", "User", "Timestamp", "Type"].map(h => <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>)}</tr></thead>
+            <tbody className="divide-y divide-slate-50">
               {filtered.map(log => (
-                <tr key={log.id} className="transition-colors" style={{ borderBottom: "1px solid rgba(59,130,246,0.06)" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(59,130,246,0.04)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                  <td className="px-5 py-3 font-medium text-white">{log.event}</td>
-                  <td className="px-5 py-3" style={{ color: "#94a3b8" }}>{log.user}</td>
-                  <td className="px-5 py-3 font-mono text-xs" style={{ color: "#64748b" }}>{log.timestamp}</td>
-                  <td className="px-5 py-3">
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                      style={typeColors[log.type] ?? { bg: "rgba(100,116,139,0.12)", color: "#94a3b8" }}>
-                      {log.type}
-                    </span>
-                  </td>
+                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-5 py-3 font-medium text-slate-800">{log.event}</td>
+                  <td className="px-5 py-3 text-slate-500">{log.user}</td>
+                  <td className="px-5 py-3 font-mono text-xs text-slate-400">{log.timestamp}</td>
+                  <td className="px-5 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${typeBadge[log.type] ?? "bg-slate-100 text-slate-500"}`}>{log.type}</span></td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={4} className="px-5 py-12 text-center text-sm" style={{ color: "#64748b" }}>No logs match the current filters.</td></tr>
-              )}
+              {filtered.length === 0 && <tr><td colSpan={4} className="px-5 py-12 text-center text-sm text-slate-400">No logs match the current filters.</td></tr>}
             </tbody>
           </table>
         </div>

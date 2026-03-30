@@ -64,8 +64,8 @@ export default function SettingsPage() {
       <div className="flex items-center gap-3">
         <Settings className="h-6 w-6 text-blue-600" />
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-800">Settings</h1>
-          <p className="text-sm text-slate-500">Platform configuration and feature toggles.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Settings</h1>
+          <p className="text-slate-500 mt-1 font-medium">Platform configuration and feature toggles.</p>
         </div>
       </div>
 

@@ -80,8 +80,8 @@ export default function RolesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-800">Roles & Permissions</h1>
-          <p className="text-sm text-slate-500 mt-1">Define roles and control access to admin panel modules.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Roles & Permissions</h1>
+          <p className="text-slate-500 mt-1 font-medium">Define roles and control access to admin panel modules.</p>
         </div>
         <button
           onClick={openCreate}
