@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Globe, Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2, AlertCircle, Star } from "lucide-react";
 import Link from "next/link";
 import { validateForm, validators } from "@/lib/validation";
+import SocialAuthButtons from "@/components/ui/SocialAuthButtons";
 
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
@@ -92,6 +93,8 @@ export default function RegisterPage() {
             <p className="text-zinc-500 text-sm">No credit card required · Setup in 5 minutes</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {/* Social auth at top */}
+            <SocialAuthButtons mode="register" />
             <div>
               <label className="block text-xs font-semibold text-zinc-400 mb-2">Full Name *</label>
               <div className="relative">

@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Globe, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { validateForm, validators } from "@/lib/validation";
+import SocialAuthButtons from "@/components/ui/SocialAuthButtons";
 
 const perks = [
   "Real-time GPS tracking across 120+ countries",
@@ -133,6 +134,8 @@ export default function LoginPage() {
             <p className="text-zinc-500 text-sm">Sign in to your logistics dashboard</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {/* Social auth at top */}
+            <SocialAuthButtons mode="login" showMagicLink />
             <div>
               <label className="block text-xs font-semibold text-zinc-400 mb-2">Email address</label>
               <div className="relative">
