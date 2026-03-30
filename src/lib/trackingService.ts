@@ -99,9 +99,9 @@ export async function fetchShipmentData(containerId: string): Promise<ShipmentDa
       { status: "Booking Confirmed", location: route.origin, date: "Mar 05, 2026", time: "10:00 AM", done: true, active: false },
       { status: "Container Loaded", location: route.origin, date: "Mar 10, 2026", time: "08:15 AM", done: true, active: false },
       { status: "Departed Port", location: route.origin, date: "Mar 12, 2026", time: "02:20 PM", done: true, active: false },
-      { status: "Customs Cleared", location: `${route.origin} Customs`, date: "Mar 13, 2026", time: "11:00 AM", done: route.status !== "Customs Hold", active: route.status === "Customs Hold" },
-      { status: "In Transit", location: route.location, date: "Mar 20, 2026", time: "09:45 AM", done: false, active: route.status === "In Transit" },
-      { status: "Arrived at Destination", location: route.destination, date: route.eta, time: "ETA", done: route.status === "Arrived", active: false },
+      { status: "Customs Cleared", location: `${route.origin} Customs`, date: "Mar 13, 2026", time: "11:00 AM", done: (route.status as string) !== "Customs Hold", active: (route.status as string) === "Customs Hold" },
+      { status: "In Transit", location: route.location, date: "Mar 20, 2026", time: "09:45 AM", done: false, active: (route.status as string) === "In Transit" },
+      { status: "Arrived at Destination", location: route.destination, date: route.eta, time: "ETA", done: (route.status as string) === "Arrived", active: false },
     ],
   };
 }
