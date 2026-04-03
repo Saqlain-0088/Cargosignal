@@ -8,7 +8,6 @@ const API_KEY = process.env.TIMETOCARGO_API_KEY!;
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const containerNumber = searchParams.get("container_number")?.trim().toUpperCase();
-  const debug = searchParams.get("debug") === "1";
 
   if (!containerNumber) {
     return NextResponse.json({ error: "container_number is required" }, { status: 400 });
@@ -24,169 +23,105 @@ export async function GET(req: NextRequest) {
 
   try {
     const url = `${BASE}/container?api_key=${API_KEY}&company=AUTO&container_number=${containerNumber}`;
-    const res = await fetch(url, {
-      headers: { "Accept": "application/json" },
-      cache: "no-store",
-    });
-
+    const res = await fetch(url, { cache: "no-store" });
     const raw = await res.json();
 
-    // Debug mode — return raw response so we can inspect the structure
-    if (debug) {
-      return NextResponse.json({ httpStatus: res.status, raw });
+    if (!res.ok || !raw.success) {
+      if (res.status === 404) return NextResponse.json({ error: "Container not found." }, { status: 404 });
+      if (res.status === 429) return NextResponse.json({ error: "Rate limit reached. Please wait and try again." }, { status: 429 });
+      return NextResponse.json({ error: raw?.status_description ?? "Tracking service unavailable." }, { status: 502 });
     }
 
-    if (!res.ok) {
-      console.error(`[TimeToCargo] ${res.status}:`, JSON.stringify(raw).slice(0, 500));
-      if (res.status === 404) return NextResponse.json({ error: "Container not found. Check the number and try again." }, { status: 404 });
-      if (res.status === 429) return NextResponse.json({ error: "Rate limit reached. Please wait a moment and try again." }, { status: 429 });
-      if (res.status === 401 || res.status === 403) return NextResponse.json({ error: "API authentication failed." }, { status: 502 });
-      return NextResponse.json({ error: raw?.message ?? raw?.error ?? "Tracking service unavailable." }, { status: 502 });
-    }
-
-    return NextResponse.json(mapResponse(containerNumber, raw));
+    return NextResponse.json(mapResponse(containerNumber, raw.data));
   } catch (err) {
-    console.error("[TimeToCargo] fetch error:", err);
+    console.error("[TimeToCargo] error:", err);
     return NextResponse.json({ error: "Failed to reach tracking service." }, { status: 503 });
   }
 }
 
-// ── Deep mapper — walks the entire response tree to find fields ───────────────
+// ── Precise mapper based on actual API response structure ─────────────────────
+// Response shape: raw.data = { summary, locations[], terminals[], container, shipment_status, tracking_metadata }
 
-function mapResponse(containerNumber: string, raw: Record<string, unknown>): MappedTracking {
-  // TimeToCargo may wrap data under various keys
-  const top = raw as Record<string, unknown>;
+interface TTCLocation {
+  id: number;
+  name: string;
+  state: string | null;
+  terminal: string | null;
+  country: string | null;
+  country_iso_code: string | null;
+  lat: number | null;
+  lng: number | null;
+  locode: string | null;
+}
 
-  // Try to find the main data object
-  const d: Record<string, unknown> =
-    (top.data as Record<string, unknown>) ??
-    (top.container as Record<string, unknown>) ??
-    (top.result as Record<string, unknown>) ??
-    (top.tracking as Record<string, unknown>) ??
-    top;
+interface TTCTerminal {
+  id: number;
+  name: string;
+}
 
-  // Events — try every possible key at top level and nested
-  const events: TTCEvent[] = (
-    (top.events ?? top.tracking_events ?? top.route ?? top.movements ??
-     d.events ?? d.tracking_events ?? d.route ?? d.movements ?? []) as TTCEvent[]
-  );
+interface TTCEvent {
+  location: number; // index into locations[]
+  terminal: number | null;
+  status: string;
+  status_code: string;
+  date: string;
+  actual: boolean;
+  vessel: string | null;
+  voyage: string | null;
+}
 
-  // Status
-  const rawStatus = pick(d, top, ["status", "container_status", "current_status", "state"]) ??
-    (events[0] as TTCEvent | undefined)?.event_type ?? "In Transit";
-  const status = normalizeStatus(String(rawStatus));
-
-  // Vessel
-  const vessel = pick(d, top, ["vessel", "vessel_name", "ship_name", "ship", "vessel_imo_name"]) ?? "—";
-
-  // Carrier / company
-  const carrier = pick(d, top, ["company", "carrier", "shipping_line", "scac", "line", "carrier_name", "operator"]) ?? "—";
-
-  // Ports
-  const origin = pick(d, top, ["pol", "pol_name", "origin", "port_of_loading", "loading_port", "from_port", "departure_port"]) ?? "—";
-  const destination = pick(d, top, ["pod", "pod_name", "destination", "port_of_discharge", "discharge_port", "to_port", "arrival_port"]) ?? "—";
-
-  // ETA
-  const etaRaw = pick(d, top, ["eta", "estimated_arrival", "estimated_time_of_arrival", "arrival_date", "ata"]);
-  const eta = etaRaw ? formatDate(String(etaRaw)) : "—";
-
-  // Current location from last event
-  const lastEvent = events[0];
-  const currentLocation = lastEvent ? buildLocation(lastEvent) :
-    String(pick(d, top, ["current_location", "location", "current_port", "last_location"]) ?? "—");
-
-  // Progress
-  const progress = estimateProgress(status, events.length);
-
-  // Timeline — newest first from API, reverse for chronological display
-  const timeline: TimelineItem[] = [...events].reverse().map((e, i, arr) => ({
-    status: String(e.description ?? e.event_type ?? e.status ?? e.event ?? e.activity ?? e.move_type ?? "Update"),
-    location: buildLocation(e),
-    date: formatDate(String(e.timestamp ?? e.date ?? e.event_date ?? e.actual_time ?? e.time ?? "")),
-    time: formatTime(String(e.timestamp ?? e.date ?? e.event_date ?? e.actual_time ?? e.time ?? "")),
-    done: i < arr.length - 1,
-    active: i === arr.length - 1,
-  }));
-
-  if (timeline.length === 0) {
-    timeline.push({
-      status: "Tracking initiated",
-      location: currentLocation !== "—" ? currentLocation : containerNumber,
-      date: formatDate(new Date().toISOString()),
-      time: formatTime(new Date().toISOString()),
-      done: false,
-      active: true,
-    });
-  }
-
-  return {
-    id: containerNumber,
-    containerId: containerNumber,
-    status,
-    vessel: String(vessel),
-    carrier: String(carrier),
-    origin: String(origin),
-    destination: String(destination),
-    currentLocation: String(currentLocation),
-    eta,
-    progress,
-    timeline,
+interface TTCData {
+  summary: {
+    origin: { location: number; terminal: number | null; date: string | null };
+    pol: { location: number; terminal: number | null; date: string | null };
+    pod: { location: number; terminal: number | null; date: string | null };
+    destination: { location: number; terminal: number | null; date: string | null };
+    company: { name: string; full_name: string; url: string; scacs: string[] };
+  };
+  locations: TTCLocation[];
+  terminals: TTCTerminal[];
+  container: {
+    number: string;
+    type: string;
+    events: TTCEvent[];
+  };
+  route_info: unknown;
+  shipment_status: string;
+  tracking_metadata: {
+    end_date: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
   };
 }
 
-// Pick first non-empty value from multiple possible keys across two objects
-function pick(primary: Record<string, unknown>, secondary: Record<string, unknown>, keys: string[]): string | null {
-  for (const k of keys) {
-    const v = primary[k] ?? secondary[k];
-    if (v !== null && v !== undefined && String(v).trim() !== "" && String(v) !== "null" && String(v) !== "undefined") {
-      return String(v);
-    }
-  }
-  return null;
-}
-
-function buildLocation(e: TTCEvent): string {
-  if (!e) return "—";
-  // Nested location object
-  if (e.location && typeof e.location === "object") {
-    const loc = e.location as Record<string, unknown>;
-    const parts = [loc.name ?? loc.port_name ?? loc.city, loc.country ?? loc.country_code].filter(v => v && String(v).trim());
-    if (parts.length) return parts.map(String).join(", ");
-  }
-  // Flat string location
-  const flat = e.location_name ?? e.port ?? e.place ?? e.port_name ?? e.facility ??
-    (typeof e.location === "string" ? e.location : null);
-  if (flat && String(flat).trim()) return String(flat);
-  return "—";
+function getLocation(locations: TTCLocation[], id: number): string {
+  const loc = locations.find(l => l.id === id);
+  if (!loc) return "—";
+  const parts = [loc.name, loc.country].filter(Boolean);
+  return parts.join(", ") || "—";
 }
 
 function normalizeStatus(s: string): string {
   const lower = s.toLowerCase();
-  if (lower.includes("transit") || lower.includes("sailing") || lower.includes("vessel") || lower.includes("departed") || lower.includes("sea")) return "In Transit";
-  if (lower.includes("customs") || lower.includes("hold") || lower.includes("inspection") || lower.includes("exam")) return "Customs Hold";
-  if (lower.includes("arriv") || lower.includes("discharg") || lower.includes("delivered") || lower.includes("delivery") || lower.includes("empty return")) return "Arrived";
-  if (lower.includes("book") || lower.includes("loaded") || lower.includes("gate in") || lower.includes("stuffed") || lower.includes("picked up")) return "Booked";
-  return s || "In Transit";
+  if (lower.includes("in_transit") || lower.includes("transit") || lower.includes("sailing") || lower.includes("vessel departure") || lower.includes("vdl")) return "In Transit";
+  if (lower.includes("customs") || lower.includes("hold") || lower.includes("exam")) return "Customs Hold";
+  if (lower.includes("arriv") || lower.includes("discharg") || lower.includes("delivered") || lower.includes("vad") || lower.includes("pod")) return "Arrived";
+  if (lower.includes("loaded") || lower.includes("cll") || lower.includes("gate in") || lower.includes("book")) return "Booked";
+  return "In Transit";
 }
 
-function estimateProgress(status: string, eventCount: number): number {
-  if (status === "Arrived") return 100;
-  if (status === "Booked") return Math.min(5 + eventCount * 3, 15);
-  if (status === "Customs Hold") return 85;
-  return Math.min(20 + eventCount * 7, 90);
-}
-
-function formatDate(iso: string): string {
-  if (!iso || iso === "—" || iso === "null" || iso === "undefined") return "—";
+function formatDate(iso: string | null): string {
+  if (!iso) return "—";
   try {
     const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
+    if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  } catch { return iso; }
+  } catch { return "—"; }
 }
 
-function formatTime(iso: string): string {
-  if (!iso || iso === "—" || iso === "null" || iso === "undefined") return "—";
+function formatTime(iso: string | null): string {
+  if (!iso) return "—";
   try {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "—";
@@ -194,48 +129,102 @@ function formatTime(iso: string): string {
   } catch { return "—"; }
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface TTCEvent {
-  event_type?: string;
-  description?: string;
-  status?: string;
-  event?: string;
-  activity?: string;
-  move_type?: string;
-  timestamp?: string;
-  date?: string;
-  event_date?: string;
-  actual_time?: string;
-  time?: string;
-  location?: unknown;
-  location_name?: string;
-  port?: string;
-  port_name?: string;
-  place?: string;
-  facility?: string;
-  [key: string]: unknown;
+function estimateProgress(status: string, events: TTCEvent[]): number {
+  if (status === "Arrived") return 100;
+  if (status === "Booked") return 10;
+  if (status === "Customs Hold") return 85;
+  // In Transit: use actual events vs total
+  const actualCount = events.filter(e => e.actual).length;
+  const total = events.length;
+  if (total === 0) return 20;
+  return Math.min(Math.round((actualCount / total) * 80) + 15, 90);
 }
 
-interface TimelineItem {
-  status: string;
-  location: string;
-  date: string;
-  time: string;
-  done: boolean;
-  active: boolean;
+function mapResponse(containerNumber: string, data: TTCData): MappedTracking {
+  const { summary, locations, container, shipment_status } = data;
+
+  // Carrier
+  const carrier = summary.company?.full_name ?? summary.company?.name ?? "—";
+
+  // Origin / Destination ports
+  const origin = getLocation(locations, summary.pol?.location ?? summary.origin?.location ?? 0);
+  const destination = getLocation(locations, summary.pod?.location ?? summary.destination?.location ?? 1);
+
+  // ETA from POD date
+  const eta = formatDate(summary.pod?.date ?? null);
+
+  // Status
+  const status = normalizeStatus(shipment_status ?? "IN_TRANSIT");
+
+  // Vessel from most recent event that has a vessel
+  const vesselEvent = container.events.find(e => e.vessel);
+  const vessel = vesselEvent?.vessel ?? "—";
+  const voyage = vesselEvent?.voyage ?? "";
+
+  // Current location — most recent actual event
+  const lastActual = container.events.find(e => e.actual);
+  const currentLocation = lastActual ? getLocation(locations, lastActual.location) : getLocation(locations, summary.pol?.location ?? 0);
+
+  // Progress
+  const progress = estimateProgress(status, container.events);
+
+  // Timeline — API returns newest first, reverse for chronological display
+  const timeline = [...container.events].reverse().map((e, i, arr) => {
+    const locName = getLocation(locations, e.location);
+    const isLast = i === arr.length - 1;
+    const isActual = e.actual;
+    return {
+      status: e.status,
+      location: locName,
+      date: formatDate(e.date),
+      time: formatTime(e.date),
+      vessel: e.vessel ?? undefined,
+      voyage: e.voyage ?? undefined,
+      statusCode: e.status_code,
+      done: isActual && !isLast,
+      active: isLast || (!isActual && i === arr.findIndex(ev => !ev.actual)),
+    };
+  });
+
+  return {
+    id: containerNumber,
+    containerId: containerNumber,
+    containerType: container.type,
+    status,
+    vessel,
+    voyage,
+    carrier,
+    origin,
+    destination,
+    currentLocation,
+    eta,
+    progress,
+    timeline,
+  };
 }
 
 export interface MappedTracking {
   id: string;
   containerId: string;
+  containerType: string;
   status: string;
   vessel: string;
+  voyage: string;
   carrier: string;
   origin: string;
   destination: string;
   currentLocation: string;
   eta: string;
   progress: number;
-  timeline: TimelineItem[];
+  timeline: {
+    status: string;
+    location: string;
+    date: string;
+    time: string;
+    vessel?: string;
+    voyage?: string;
+    statusCode?: string;
+    done: boolean;
+    active: boolean;
+  }[];
 }

@@ -11,26 +11,30 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-interface TimelineEvent {
-  status: string;
-  location: string;
-  date: string;
-  time: string;
-  done: boolean;
-  active: boolean;
-}
-
 interface TrackingResult {
   id: string;
+  containerId?: string;
+  containerType?: string;
   status: string;
   vessel: string;
+  voyage?: string;
   carrier: string;
   origin: string;
   destination: string;
   currentLocation: string;
   eta: string;
   progress: number;
-  timeline: TimelineEvent[];
+  timeline: {
+    status: string;
+    location: string;
+    date: string;
+    time: string;
+    vessel?: string;
+    voyage?: string;
+    statusCode?: string;
+    done: boolean;
+    active: boolean;
+  }[];
 }
 
 const statusColors: Record<string, string> = {
@@ -193,12 +197,14 @@ function TrackingContent() {
 
                 <div className="p-6 space-y-6">
                   {/* Key details */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {[
-                      { label: "Vessel", value: result.vessel, icon: Ship },
+                      { label: "Vessel", value: result.vessel + (result.voyage ? ` / ${result.voyage}` : ""), icon: Ship },
                       { label: "Carrier", value: result.carrier, icon: Package },
-                      { label: "Origin", value: result.origin, icon: MapPin },
-                      { label: "Destination", value: result.destination, icon: MapPin },
+                      { label: "Container Type", value: result.containerType ?? "—", icon: Package },
+                      { label: "Origin (POL)", value: result.origin, icon: MapPin },
+                      { label: "Destination (POD)", value: result.destination, icon: MapPin },
+                      { label: "Current Location", value: result.currentLocation, icon: Navigation },
                     ].map(d => (
                       <div key={d.label} className="rounded-xl p-4 bg-slate-50 border border-slate-100">
                         <div className="flex items-center gap-1.5 mb-2">
