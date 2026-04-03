@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getPendingTracking, clearPendingTracking, fetchShipmentData, saveShipmentToUser } from "@/lib/trackingService";
+import { getPendingTracking, clearPendingTracking } from "@/lib/trackingService";
 
 export type AuthProvider = "email" | "google" | "magic_link";
 
@@ -55,13 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const pending = getPendingTracking();
     if (pending) {
       clearPendingTracking();
-      try {
-        const shipment = await fetchShipmentData(pending);
-        const shipmentId = await saveShipmentToUser(shipment, u.id);
-        router.push(`/dashboard/shipments/${shipmentId}`);
-      } catch {
-        router.push("/dashboard");
-      }
+      // Redirect to dashboard tracking page with the container pre-filled
+      router.push(`/dashboard/tracking?q=${encodeURIComponent(pending)}`);
     } else {
       router.push("/dashboard");
     }
