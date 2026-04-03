@@ -31,19 +31,19 @@ export async function GET(req: NextRequest) {
 
     const raw = await res.json();
 
-    // Return raw for debugging
+    // Debug mode — return raw response so we can inspect the structure
     if (debug) {
-      return NextResponse.json({ raw, status: res.status });
+      return NextResponse.json({ httpStatus: res.status, raw });
     }
 
     if (!res.ok) {
-      console.error(`[TimeToCargo] ${res.status}:`, JSON.stringify(raw));
-      if (res.status === 404) return NextResponse.json({ error: "Container not found." }, { status: 404 });
-      if (res.status === 429) return NextResponse.json({ error: "Rate limit reached. Please wait and try again." }, { status: 429 });
-      return NextResponse.json({ error: raw?.message ?? "Tracking service unavailable." }, { status: 502 });
+      console.error(`[TimeToCargo] ${res.status}:`, JSON.stringify(raw).slice(0, 500));
+      if (res.status === 404) return NextResponse.json({ error: "Container not found. Check the number and try again." }, { status: 404 });
+      if (res.status === 429) return NextResponse.json({ error: "Rate limit reached. Please wait a moment and try again." }, { status: 429 });
+      if (res.status === 401 || res.status === 403) return NextResponse.json({ error: "API authentication failed." }, { status: 502 });
+      return NextResponse.json({ error: raw?.message ?? raw?.error ?? "Tracking service unavailable." }, { status: 502 });
     }
 
-    console.log("[TimeToCargo] raw keys:", Object.keys(raw));
     return NextResponse.json(mapResponse(containerNumber, raw));
   } catch (err) {
     console.error("[TimeToCargo] fetch error:", err);
@@ -51,49 +51,59 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ── Mapper — handles multiple possible response shapes from TimeToCargo ───────
+// ── Deep mapper — walks the entire response tree to find fields ───────────────
 
 function mapResponse(containerNumber: string, raw: Record<string, unknown>): MappedTracking {
-  // TimeToCargo v1 actual response shape (based on their docs):
-  // { container_number, company, status, vessel, voyage, pol, pod, eta, events: [...] }
-  // OR nested under a "data" key
-  const d = (raw.data ?? raw) as Record<string, unknown>;
+  // TimeToCargo may wrap data under various keys
+  const top = raw as Record<string, unknown>;
 
-  // Events array — try multiple possible keys
+  // Try to find the main data object
+  const d: Record<string, unknown> =
+    (top.data as Record<string, unknown>) ??
+    (top.container as Record<string, unknown>) ??
+    (top.result as Record<string, unknown>) ??
+    (top.tracking as Record<string, unknown>) ??
+    top;
+
+  // Events — try every possible key at top level and nested
   const events: TTCEvent[] = (
-    (d.events ?? d.tracking_events ?? d.route ?? raw.events ?? []) as TTCEvent[]
+    (top.events ?? top.tracking_events ?? top.route ?? top.movements ??
+     d.events ?? d.tracking_events ?? d.route ?? d.movements ?? []) as TTCEvent[]
   );
 
   // Status
-  const rawStatus = str(d.status ?? d.container_status ?? (events[0] as TTCEvent | undefined)?.event_type ?? "In Transit");
-  const status = normalizeStatus(rawStatus);
+  const rawStatus = pick(d, top, ["status", "container_status", "current_status", "state"]) ??
+    (events[0] as TTCEvent | undefined)?.event_type ?? "In Transit";
+  const status = normalizeStatus(String(rawStatus));
 
-  // Vessel / carrier
-  const vessel = str(d.vessel ?? d.vessel_name ?? d.ship_name ?? "—");
-  const carrier = str(d.company ?? d.carrier ?? d.shipping_line ?? d.scac ?? "—");
+  // Vessel
+  const vessel = pick(d, top, ["vessel", "vessel_name", "ship_name", "ship", "vessel_imo_name"]) ?? "—";
+
+  // Carrier / company
+  const carrier = pick(d, top, ["company", "carrier", "shipping_line", "scac", "line", "carrier_name", "operator"]) ?? "—";
 
   // Ports
-  const origin = str(d.pol ?? d.pol_name ?? d.origin ?? d.port_of_loading ?? "—");
-  const destination = str(d.pod ?? d.pod_name ?? d.destination ?? d.port_of_discharge ?? "—");
+  const origin = pick(d, top, ["pol", "pol_name", "origin", "port_of_loading", "loading_port", "from_port", "departure_port"]) ?? "—";
+  const destination = pick(d, top, ["pod", "pod_name", "destination", "port_of_discharge", "discharge_port", "to_port", "arrival_port"]) ?? "—";
 
   // ETA
-  const eta = d.eta ? formatDate(str(d.eta)) : "—";
+  const etaRaw = pick(d, top, ["eta", "estimated_arrival", "estimated_time_of_arrival", "arrival_date", "ata"]);
+  const eta = etaRaw ? formatDate(String(etaRaw)) : "—";
 
-  // Current location — last event location
+  // Current location from last event
   const lastEvent = events[0];
-  const currentLocation = lastEvent
-    ? buildLocation(lastEvent)
-    : str(d.current_location ?? d.location ?? "—");
+  const currentLocation = lastEvent ? buildLocation(lastEvent) :
+    String(pick(d, top, ["current_location", "location", "current_port", "last_location"]) ?? "—");
 
   // Progress
   const progress = estimateProgress(status, events.length);
 
-  // Timeline — TimeToCargo returns newest first, reverse for chronological display
+  // Timeline — newest first from API, reverse for chronological display
   const timeline: TimelineItem[] = [...events].reverse().map((e, i, arr) => ({
-    status: str(e.description ?? e.event_type ?? e.status ?? e.event ?? "Update"),
+    status: String(e.description ?? e.event_type ?? e.status ?? e.event ?? e.activity ?? e.move_type ?? "Update"),
     location: buildLocation(e),
-    date: formatDate(str(e.timestamp ?? e.date ?? e.event_date ?? "")),
-    time: formatTime(str(e.timestamp ?? e.date ?? e.event_date ?? "")),
+    date: formatDate(String(e.timestamp ?? e.date ?? e.event_date ?? e.actual_time ?? e.time ?? "")),
+    time: formatTime(String(e.timestamp ?? e.date ?? e.event_date ?? e.actual_time ?? e.time ?? "")),
     done: i < arr.length - 1,
     active: i === arr.length - 1,
   }));
@@ -101,7 +111,7 @@ function mapResponse(containerNumber: string, raw: Record<string, unknown>): Map
   if (timeline.length === 0) {
     timeline.push({
       status: "Tracking initiated",
-      location: currentLocation || "—",
+      location: currentLocation !== "—" ? currentLocation : containerNumber,
       date: formatDate(new Date().toISOString()),
       time: formatTime(new Date().toISOString()),
       done: false,
@@ -113,45 +123,49 @@ function mapResponse(containerNumber: string, raw: Record<string, unknown>): Map
     id: containerNumber,
     containerId: containerNumber,
     status,
-    vessel,
-    carrier,
-    origin,
-    destination,
-    currentLocation: currentLocation || "—",
+    vessel: String(vessel),
+    carrier: String(carrier),
+    origin: String(origin),
+    destination: String(destination),
+    currentLocation: String(currentLocation),
     eta,
     progress,
     timeline,
   };
 }
 
-function buildLocation(e: TTCEvent): string {
-  if (!e) return "—";
-  // Try nested location object first
-  if (e.location && typeof e.location === "object") {
-    const loc = e.location as Record<string, unknown>;
-    return [loc.name, loc.city, loc.country].filter(Boolean).join(", ") || "—";
+// Pick first non-empty value from multiple possible keys across two objects
+function pick(primary: Record<string, unknown>, secondary: Record<string, unknown>, keys: string[]): string | null {
+  for (const k of keys) {
+    const v = primary[k] ?? secondary[k];
+    if (v !== null && v !== undefined && String(v).trim() !== "" && String(v) !== "null" && String(v) !== "undefined") {
+      return String(v);
+    }
   }
-  // Try flat fields
-  return str(
-    (e as Record<string, unknown>).location_name ??
-    (e as Record<string, unknown>).port ??
-    (e as Record<string, unknown>).place ??
-    (e as Record<string, unknown>).location ??
-    "—"
-  );
+  return null;
 }
 
-function str(v: unknown): string {
-  if (v === null || v === undefined) return "";
-  return String(v);
+function buildLocation(e: TTCEvent): string {
+  if (!e) return "—";
+  // Nested location object
+  if (e.location && typeof e.location === "object") {
+    const loc = e.location as Record<string, unknown>;
+    const parts = [loc.name ?? loc.port_name ?? loc.city, loc.country ?? loc.country_code].filter(v => v && String(v).trim());
+    if (parts.length) return parts.map(String).join(", ");
+  }
+  // Flat string location
+  const flat = e.location_name ?? e.port ?? e.place ?? e.port_name ?? e.facility ??
+    (typeof e.location === "string" ? e.location : null);
+  if (flat && String(flat).trim()) return String(flat);
+  return "—";
 }
 
 function normalizeStatus(s: string): string {
   const lower = s.toLowerCase();
-  if (lower.includes("transit") || lower.includes("sailing") || lower.includes("departed") || lower.includes("vessel")) return "In Transit";
-  if (lower.includes("customs") || lower.includes("hold") || lower.includes("inspection")) return "Customs Hold";
-  if (lower.includes("arriv") || lower.includes("discharg") || lower.includes("delivered") || lower.includes("delivery")) return "Arrived";
-  if (lower.includes("book") || lower.includes("loaded") || lower.includes("gate in") || lower.includes("stuffed")) return "Booked";
+  if (lower.includes("transit") || lower.includes("sailing") || lower.includes("vessel") || lower.includes("departed") || lower.includes("sea")) return "In Transit";
+  if (lower.includes("customs") || lower.includes("hold") || lower.includes("inspection") || lower.includes("exam")) return "Customs Hold";
+  if (lower.includes("arriv") || lower.includes("discharg") || lower.includes("delivered") || lower.includes("delivery") || lower.includes("empty return")) return "Arrived";
+  if (lower.includes("book") || lower.includes("loaded") || lower.includes("gate in") || lower.includes("stuffed") || lower.includes("picked up")) return "Booked";
   return s || "In Transit";
 }
 
@@ -163,7 +177,7 @@ function estimateProgress(status: string, eventCount: number): number {
 }
 
 function formatDate(iso: string): string {
-  if (!iso || iso === "—") return "—";
+  if (!iso || iso === "—" || iso === "null" || iso === "undefined") return "—";
   try {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return iso;
@@ -172,7 +186,7 @@ function formatDate(iso: string): string {
 }
 
 function formatTime(iso: string): string {
-  if (!iso || iso === "—") return "—";
+  if (!iso || iso === "—" || iso === "null" || iso === "undefined") return "—";
   try {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "—";
@@ -187,13 +201,19 @@ interface TTCEvent {
   description?: string;
   status?: string;
   event?: string;
+  activity?: string;
+  move_type?: string;
   timestamp?: string;
   date?: string;
   event_date?: string;
+  actual_time?: string;
+  time?: string;
   location?: unknown;
   location_name?: string;
   port?: string;
+  port_name?: string;
   place?: string;
+  facility?: string;
   [key: string]: unknown;
 }
 
