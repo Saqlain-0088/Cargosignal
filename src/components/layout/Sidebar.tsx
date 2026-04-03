@@ -15,12 +15,14 @@ import {
   Ship,
   FileCheck,
   DollarSign,
-  Pin
+  Pin,
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Tracking", href: "/dashboard/tracking", icon: Search },
   { name: "Shipments", href: "/dashboard/shipments", icon: Package },
   { name: "Containers", href: "/dashboard/containers", icon: Layers },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
