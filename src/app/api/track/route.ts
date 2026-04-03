@@ -8,12 +8,12 @@ const API_KEY = process.env.TIMETOCARGO_API_KEY!;
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const containerNumber = searchParams.get("container_number")?.trim().toUpperCase();
+  const debug = searchParams.get("debug") === "1";
 
   if (!containerNumber) {
     return NextResponse.json({ error: "container_number is required" }, { status: 400 });
   }
 
-  // Basic format validation: 4 letters + 7 digits (e.g. MSDU8368827)
   const valid = /^[A-Z]{4}\d{7}$/.test(containerNumber);
   if (!valid) {
     return NextResponse.json(
@@ -26,73 +26,88 @@ export async function GET(req: NextRequest) {
     const url = `${BASE}/container?api_key=${API_KEY}&company=AUTO&container_number=${containerNumber}`;
     const res = await fetch(url, {
       headers: { "Accept": "application/json" },
-      next: { revalidate: 60 }, // cache 60s to respect rate limits
+      cache: "no-store",
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.error(`[TimeToCargo] ${res.status}:`, text);
-      if (res.status === 404) {
-        return NextResponse.json({ error: "Container not found. Check the number and try again." }, { status: 404 });
-      }
-      if (res.status === 429) {
-        return NextResponse.json({ error: "Rate limit reached. Please wait a moment and try again." }, { status: 429 });
-      }
-      return NextResponse.json({ error: "Tracking service unavailable. Please try again later." }, { status: 502 });
+    const raw = await res.json();
+
+    // Return raw for debugging
+    if (debug) {
+      return NextResponse.json({ raw, status: res.status });
     }
 
-    const data = await res.json();
-    return NextResponse.json(mapResponse(containerNumber, data));
+    if (!res.ok) {
+      console.error(`[TimeToCargo] ${res.status}:`, JSON.stringify(raw));
+      if (res.status === 404) return NextResponse.json({ error: "Container not found." }, { status: 404 });
+      if (res.status === 429) return NextResponse.json({ error: "Rate limit reached. Please wait and try again." }, { status: 429 });
+      return NextResponse.json({ error: raw?.message ?? "Tracking service unavailable." }, { status: 502 });
+    }
+
+    console.log("[TimeToCargo] raw keys:", Object.keys(raw));
+    return NextResponse.json(mapResponse(containerNumber, raw));
   } catch (err) {
     console.error("[TimeToCargo] fetch error:", err);
     return NextResponse.json({ error: "Failed to reach tracking service." }, { status: 503 });
   }
 }
 
-// ── Map TimeToCargo response → our TrackingResult shape ──────────────────────
+// ── Mapper — handles multiple possible response shapes from TimeToCargo ───────
 
-function mapResponse(containerNumber: string, raw: TTCResponse): MappedTracking {
-  const info = raw.container ?? raw;
-  const events: TTCEvent[] = raw.events ?? raw.tracking_events ?? [];
+function mapResponse(containerNumber: string, raw: Record<string, unknown>): MappedTracking {
+  // TimeToCargo v1 actual response shape (based on their docs):
+  // { container_number, company, status, vessel, voyage, pol, pod, eta, events: [...] }
+  // OR nested under a "data" key
+  const d = (raw.data ?? raw) as Record<string, unknown>;
 
-  // Derive status
-  const lastEvent = events[0];
-  const rawStatus = info.status ?? lastEvent?.event_type ?? "In Transit";
+  // Events array — try multiple possible keys
+  const events: TTCEvent[] = (
+    (d.events ?? d.tracking_events ?? d.route ?? raw.events ?? []) as TTCEvent[]
+  );
+
+  // Status
+  const rawStatus = str(d.status ?? d.container_status ?? (events[0] as TTCEvent | undefined)?.event_type ?? "In Transit");
   const status = normalizeStatus(rawStatus);
 
-  // Build timeline from events (most recent first → reverse for display)
-  const timeline = [...events].reverse().map((e, i, arr) => ({
-    status: e.description ?? e.event_type ?? "Update",
-    location: [e.location?.name, e.location?.country].filter(Boolean).join(", ") || "—",
-    date: formatDate(e.timestamp ?? e.date),
-    time: formatTime(e.timestamp ?? e.date),
+  // Vessel / carrier
+  const vessel = str(d.vessel ?? d.vessel_name ?? d.ship_name ?? "—");
+  const carrier = str(d.company ?? d.carrier ?? d.shipping_line ?? d.scac ?? "—");
+
+  // Ports
+  const origin = str(d.pol ?? d.pol_name ?? d.origin ?? d.port_of_loading ?? "—");
+  const destination = str(d.pod ?? d.pod_name ?? d.destination ?? d.port_of_discharge ?? "—");
+
+  // ETA
+  const eta = d.eta ? formatDate(str(d.eta)) : "—";
+
+  // Current location — last event location
+  const lastEvent = events[0];
+  const currentLocation = lastEvent
+    ? buildLocation(lastEvent)
+    : str(d.current_location ?? d.location ?? "—");
+
+  // Progress
+  const progress = estimateProgress(status, events.length);
+
+  // Timeline — TimeToCargo returns newest first, reverse for chronological display
+  const timeline: TimelineItem[] = [...events].reverse().map((e, i, arr) => ({
+    status: str(e.description ?? e.event_type ?? e.status ?? e.event ?? "Update"),
+    location: buildLocation(e),
+    date: formatDate(str(e.timestamp ?? e.date ?? e.event_date ?? "")),
+    time: formatTime(str(e.timestamp ?? e.date ?? e.event_date ?? "")),
     done: i < arr.length - 1,
     active: i === arr.length - 1,
   }));
 
-  // If no events, add a placeholder
   if (timeline.length === 0) {
     timeline.push({
       status: "Tracking initiated",
-      location: "—",
+      location: currentLocation || "—",
       date: formatDate(new Date().toISOString()),
       time: formatTime(new Date().toISOString()),
       done: false,
       active: true,
     });
   }
-
-  const origin = info.pol ?? info.origin ?? info.port_of_loading ?? events[events.length - 1]?.location?.name ?? "—";
-  const destination = info.pod ?? info.destination ?? info.port_of_discharge ?? events[0]?.location?.name ?? "—";
-  const eta = info.eta ? formatDate(info.eta) : "—";
-  const vessel = info.vessel ?? info.vessel_name ?? "—";
-  const carrier = info.carrier ?? info.shipping_line ?? "—";
-  const currentLocation = lastEvent
-    ? [lastEvent.location?.name, lastEvent.location?.country].filter(Boolean).join(", ")
-    : "—";
-
-  // Estimate progress from events
-  const progress = estimateProgress(status, events.length);
 
   return {
     id: containerNumber,
@@ -102,72 +117,93 @@ function mapResponse(containerNumber: string, raw: TTCResponse): MappedTracking 
     carrier,
     origin,
     destination,
-    currentLocation,
+    currentLocation: currentLocation || "—",
     eta,
     progress,
     timeline,
-    raw, // pass through for debugging
   };
+}
+
+function buildLocation(e: TTCEvent): string {
+  if (!e) return "—";
+  // Try nested location object first
+  if (e.location && typeof e.location === "object") {
+    const loc = e.location as Record<string, unknown>;
+    return [loc.name, loc.city, loc.country].filter(Boolean).join(", ") || "—";
+  }
+  // Try flat fields
+  return str(
+    (e as Record<string, unknown>).location_name ??
+    (e as Record<string, unknown>).port ??
+    (e as Record<string, unknown>).place ??
+    (e as Record<string, unknown>).location ??
+    "—"
+  );
+}
+
+function str(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  return String(v);
 }
 
 function normalizeStatus(s: string): string {
   const lower = s.toLowerCase();
-  if (lower.includes("transit") || lower.includes("sailing") || lower.includes("departed")) return "In Transit";
-  if (lower.includes("customs") || lower.includes("hold")) return "Customs Hold";
-  if (lower.includes("arriv") || lower.includes("discharg") || lower.includes("delivered")) return "Arrived";
-  if (lower.includes("book") || lower.includes("loaded") || lower.includes("gate in")) return "Booked";
-  return s;
+  if (lower.includes("transit") || lower.includes("sailing") || lower.includes("departed") || lower.includes("vessel")) return "In Transit";
+  if (lower.includes("customs") || lower.includes("hold") || lower.includes("inspection")) return "Customs Hold";
+  if (lower.includes("arriv") || lower.includes("discharg") || lower.includes("delivered") || lower.includes("delivery")) return "Arrived";
+  if (lower.includes("book") || lower.includes("loaded") || lower.includes("gate in") || lower.includes("stuffed")) return "Booked";
+  return s || "In Transit";
 }
 
 function estimateProgress(status: string, eventCount: number): number {
   if (status === "Arrived") return 100;
-  if (status === "Booked") return 5;
+  if (status === "Booked") return Math.min(5 + eventCount * 3, 15);
   if (status === "Customs Hold") return 85;
-  // In Transit: estimate from event count
-  return Math.min(20 + eventCount * 8, 90);
+  return Math.min(20 + eventCount * 7, 90);
 }
 
-function formatDate(iso?: string): string {
-  if (!iso) return "—";
+function formatDate(iso: string): string {
+  if (!iso || iso === "—") return "—";
   try {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   } catch { return iso; }
 }
 
-function formatTime(iso?: string): string {
-  if (!iso) return "—";
+function formatTime(iso: string): string {
+  if (!iso || iso === "—") return "—";
   try {
-    return new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
   } catch { return "—"; }
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface TTCLocation { name?: string; country?: string; locode?: string; }
 interface TTCEvent {
   event_type?: string;
   description?: string;
+  status?: string;
+  event?: string;
   timestamp?: string;
   date?: string;
-  location?: TTCLocation;
-}
-interface TTCResponse {
-  container?: Record<string, string>;
-  events?: TTCEvent[];
-  tracking_events?: TTCEvent[];
-  status?: string;
-  pol?: string;
-  pod?: string;
-  origin?: string;
-  destination?: string;
-  port_of_loading?: string;
-  port_of_discharge?: string;
-  eta?: string;
-  vessel?: string;
-  vessel_name?: string;
-  carrier?: string;
-  shipping_line?: string;
+  event_date?: string;
+  location?: unknown;
+  location_name?: string;
+  port?: string;
+  place?: string;
   [key: string]: unknown;
+}
+
+interface TimelineItem {
+  status: string;
+  location: string;
+  date: string;
+  time: string;
+  done: boolean;
+  active: boolean;
 }
 
 export interface MappedTracking {
@@ -181,6 +217,5 @@ export interface MappedTracking {
   currentLocation: string;
   eta: string;
   progress: number;
-  timeline: { status: string; location: string; date: string; time: string; done: boolean; active: boolean }[];
-  raw?: unknown;
+  timeline: TimelineItem[];
 }
