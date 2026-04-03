@@ -6,44 +6,16 @@ import { cn } from "@/lib/utils";
 
 export interface TrackingResult {
   id: string;
+  containerId?: string;
   status: string;
   vessel: string;
+  carrier?: string;
   origin: string;
   destination: string;
   currentLocation: string;
   eta: string;
   progress: number;
   timeline: { status: string; location: string; date: string; time: string; done: boolean; active: boolean }[];
-}
-
-// Mock data generator based on container ID
-export function getMockTrackingData(id: string): TrackingResult {
-  const seed = id.charCodeAt(0) % 4;
-  const statuses = ["In Transit", "Customs Hold", "Arrived", "Departed"];
-  const routes = [
-    { origin: "SHANGHAI, CN", destination: "LOS ANGELES, US", vessel: "MAERSK HOUSTON", location: "Pacific Ocean", eta: "Mar 28, 2026", progress: 72 },
-    { origin: "DUBAI, UAE", destination: "HAMBURG, DE", vessel: "MSC OSCAR", location: "Arabian Sea", eta: "Apr 02, 2026", progress: 45 },
-    { origin: "SINGAPORE, SG", destination: "ROTTERDAM, NL", vessel: "CMA CGM MARCO POLO", location: "Indian Ocean", eta: "Apr 10, 2026", progress: 30 },
-    { origin: "MUMBAI, IN", destination: "NEW YORK, US", vessel: "EVER GIVEN", location: "Suez Canal", eta: "Mar 25, 2026", progress: 88 },
-  ];
-  const r = routes[seed];
-  return {
-    id,
-    status: statuses[seed],
-    vessel: r.vessel,
-    origin: r.origin,
-    destination: r.destination,
-    currentLocation: r.location,
-    eta: r.eta,
-    progress: r.progress,
-    timeline: [
-      { status: "Container Loaded", location: r.origin, date: "Mar 10, 2026", time: "08:15 AM", done: true, active: false },
-      { status: "Departed Port", location: r.origin, date: "Mar 12, 2026", time: "02:20 PM", done: true, active: false },
-      { status: "Customs Cleared", location: r.origin + " Customs", date: "Mar 13, 2026", time: "11:00 AM", done: true, active: false },
-      { status: "In Transit", location: r.location, date: "Mar 20, 2026", time: "09:45 AM", done: false, active: true },
-      { status: "Arrived at Port", location: r.destination, date: r.eta, time: "ETA", done: false, active: false },
-    ],
-  };
 }
 
 const statusColors: Record<string, string> = {
@@ -102,7 +74,7 @@ export default function InlineTrackingResult({ result, onClose }: Props) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: "Vessel", value: result.vessel, icon: Ship },
-              { label: "Current Location", value: result.currentLocation, icon: Navigation },
+              { label: "Carrier", value: result.carrier ?? "—", icon: Package },
               { label: "Origin", value: result.origin, icon: MapPin },
               { label: "Destination", value: result.destination, icon: MapPin },
             ].map(d => (

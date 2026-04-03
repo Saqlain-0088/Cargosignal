@@ -1,47 +1,74 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String
+  password    String?   // null for OAuth users
+  provider    String    @default("email") // email | google | magic_link
+  role        String    @default("viewer")
+  companyId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company     CompanyTenant? @relation(fields: [companyId], references: [id])
+  shipments   UserShipment[]
+}
+
+model CompanyTenant {
+  id              String   @id @default(cuid())
+  name            String
+  industry        String
+  status          String   @default("active")
+  activeShipments Int      @default(0)
+  totalSpend      Float    @default(0)
+  userCount       Int      @default(0)
+  joinDate        DateTime @default(now())
+  logo            String?
+
+  users           User[]
 }
 
 model Shipment {
-  id          String   @id
+  id          String   @id @default(cuid())
   origin      String
   destination String
   status      String
   eta         DateTime
   carrier     String
+  cargoType   String?
   latitude    Float?
   longitude   Float?
+  createdAt   DateTime @default(now())
 
   containers     Container[]
   customsEvents  CustomsEvent[]
   logisticsCosts LogisticsCost[]
+  userShipments  UserShipment[]
 }
 
-model User {
-  id    String @id
-  email String @unique
-  role  String
-  plan  String
-}
-
-model Document {
-  id         String @id
+// Junction: which users are tracking which shipments
+model UserShipment {
+  id         String   @id @default(cuid())
+  userId     String
   shipmentId String
-  type       String
-  status     String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, shipmentId])
 }
 
 model Container {
-  id              String @id
+  id              String @id @default(cuid())
   shipmentId      String
   containerNumber String
   size            String
@@ -54,16 +81,16 @@ model Container {
 }
 
 model Alert {
-  id        String   @id
+  id        String   @id @default(cuid())
   type      String
   severity  String
   message   String
-  timestamp DateTime
+  timestamp DateTime @default(now())
   relatedId String?
 }
 
 model Port {
-  id        String @id
+  id        String @id @default(cuid())
   name      String
   code      String
   country   String
@@ -72,11 +99,11 @@ model Port {
 }
 
 model CustomsEvent {
-  id         String   @id
+  id         String   @id @default(cuid())
   shipmentId String
   event      String
   status     String
-  timestamp  DateTime
+  timestamp  DateTime @default(now())
   location   String
   notes      String?
 
@@ -84,32 +111,41 @@ model CustomsEvent {
 }
 
 model LogisticsCost {
-  id         String   @id
+  id         String   @id @default(cuid())
   shipmentId String
   category   String
   amount     Float
   currency   String
   status     String
-  date       DateTime
+  date       DateTime @default(now())
 
   shipment Shipment @relation(fields: [shipmentId], references: [id])
 }
 
-model Role {
-  id          String   @id
-  name        String
-  description String
-  permissions String[]
+model Document {
+  id         String @id @default(cuid())
+  shipmentId String
+  type       String
+  status     String
 }
 
-model CompanyTenant {
-  id              String   @id
-  name            String
-  industry        String
-  status          String
-  activeShipments Int
-  totalSpend      Float
-  userCount       Int
-  joinDate        DateTime
-  logo            String?
+model AdminRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  color       String   @default("#3b82f6")
+  permissions String[]
+
+  members AdminMember[]
+}
+
+model AdminMember {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  roleId    String
+  status    String   @default("active")
+  joinedAt  DateTime @default(now())
+
+  role AdminRole @relation(fields: [roleId], references: [id])
 }

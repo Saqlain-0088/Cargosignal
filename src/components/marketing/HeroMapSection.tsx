@@ -7,7 +7,7 @@ import { Search, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { setPendingTracking } from "@/lib/trackingService";
-import InlineTrackingResult, { getMockTrackingData, TrackingResult } from "./InlineTrackingResult";
+import InlineTrackingResult, { TrackingResult } from "./InlineTrackingResult";
 const TacticalWorldMap = dynamic(() => import("./TacticalWorldMap"), {
   ssr: false,
   loading: () => <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, #020d1a 0%, #030f1f 100%)" }} />,
@@ -41,16 +41,26 @@ export default function HeroMapSection() {
       return;
     }
 
-    // Authenticated — show inline results
+    // Authenticated — call real tracking API
     setLoading(true);
     setResult(null);
 
-    // Simulate API call delay
-    await new Promise(r => setTimeout(r, 1200));
+    try {
+      const res = await fetch(`/api/track?container_number=${encodeURIComponent(containerNumber.trim().toUpperCase())}`);
+      const data = await res.json();
 
-    const data = getMockTrackingData(containerNumber.trim().toUpperCase());
-    setResult(data);
-    setLoading(false);
+      if (!res.ok) {
+        setError(data.error ?? "Tracking failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      setResult(data as TrackingResult);
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
 
     // Smooth scroll to results
     setTimeout(() => {
