@@ -148,3 +148,19 @@ model AdminMember {
 
   role AdminRole @relation(fields: [roleId], references: [id])
 }
+
+model TrackingSearch {
+  id              String   @id @default(cuid())
+  userId          String
+  containerNumber String
+  carrier         String?
+  origin          String?
+  destination     String?
+  status          String?
+  vessel          String?
+  eta             String?
+  searchedAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, containerNumber])
+}
