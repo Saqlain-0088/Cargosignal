@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -41,6 +41,16 @@ const statusColors: Record<string, string> = {
 };
 
 export default function TrackingPage() {
+  return (
+    <DashboardLayout>
+      <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}>
+        <TrackingContent />
+      </Suspense>
+    </DashboardLayout>
+  );
+}
+
+function TrackingContent() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -89,8 +99,7 @@ export default function TrackingPage() {
   const color = result ? (statusColors[result.status] ?? "#3b82f6") : "#3b82f6";
 
   return (
-    <DashboardLayout>
-      <div className="flex flex-col gap-6 pb-16">
+    <div className="flex flex-col gap-6 pb-16">
         {/* Header */}
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Container Tracking</h1>
@@ -301,6 +310,5 @@ export default function TrackingPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }
